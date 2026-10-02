@@ -1,11 +1,10 @@
 // Deploy the Episode contract and record where it landed.
 //
-//   EPISODE_PRIVATE_KEY=0x...  npm run deploy          # studionet, chain 61999
-//   EPISODE_NETWORK=studio      npm run deploy          # chain 61997
-//   EPISODE_NETWORK=studio-next npm run deploy          # chain 61998
-//   EPISODE_RPC=http://localhost:4000/api EPISODE_CHAIN_ID=61999 npm run deploy
+//   EPISODE_PRIVATE_KEY=0x... npm run deploy          # studionet, chain 61999
+//   EPISODE_NETWORK=studio-devnet npm run deploy      # chain 61997
+//   EPISODE_RPC=http://localhost:4000/api EPISODE_CHAIN_ID=61127 npm run deploy
 
-import { connect, contractSource, settle, writeRecord } from "./client.mjs";
+import { connect, contractSource, deploy, writeRecord } from "./client.mjs";
 
 async function main() {
   const { client, target, account } = await connect();
@@ -18,22 +17,33 @@ async function main() {
         '# { "Depends": "py-genlayer:<hash>" }',
     );
   }
+  if (/py-genlayer:(test|latest)\b/.test(pin)) {
+    throw new Error(
+      `the runner pin is an alias (${pin.trim()}); the networks reject ` +
+        "py-genlayer:test and py-genlayer:latest. Pin a concrete runner hash.",
+    );
+  }
   console.log(`- runner ${pin.trim()}`);
 
-  const hash = await client.deployContract({ code, args: [] });
-  console.log(`- deploy transaction ${hash}`);
-  const receipt = await settle(client, hash, "deploy");
+  // The schema for the source on disk, before anything is sent: it costs
+  // nothing and it fails on a contract that would not compile.
+  const schema = await client.getContractSchemaForCode(code);
+  const surface = Object.keys(schema?.methods ?? {});
+  if (surface.length === 0) {
+    throw new Error("the contract declares no public methods; nothing to deploy");
+  }
+  console.log(`- source compiles, ${surface.length} entry points`);
 
-  // A deploy receipt carries the new address in its decoded tx data; the raw
-  // shape and the recipient field are the fallbacks for older endpoints.
+  const { hash, transaction } = await deploy(client, code, []);
+
   const address =
-    receipt.txDataDecoded?.contractAddress ??
-    receipt.data?.contract_address ??
-    receipt.to_address ??
-    receipt.recipient;
+    transaction.txDataDecoded?.contractAddress ??
+    transaction.data?.contract_address ??
+    transaction.to_address ??
+    transaction.recipient;
   if (!address) {
     throw new Error(
-      `the receipt carried no contract address: ${JSON.stringify(receipt).slice(0, 400)}`,
+      `the receipt carried no contract address: ${JSON.stringify(transaction).slice(0, 400)}`,
     );
   }
 
@@ -46,12 +56,16 @@ async function main() {
     deployer: account.address,
     deployedAt: new Date().toISOString(),
     transaction: hash,
+    runner: pin.trim(),
   });
+
   console.log("");
   console.log("Point the app at it:");
   console.log(`  NEXT_PUBLIC_EPISODE_CONTRACT=${address}`);
   console.log(`  NEXT_PUBLIC_EPISODE_CHAIN_ID=${target.id}`);
   console.log(`  NEXT_PUBLIC_EPISODE_RPC=${target.rpc}`);
+  console.log("");
+  console.log("Then: npm run schema && npm run seed");
 }
 
 main().catch((error) => {

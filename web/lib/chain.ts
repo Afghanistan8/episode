@@ -1,33 +1,19 @@
 // Where the app looks for Episode.
 //
-// Studio (61997) is the default. Studio Next (61998) is the alternate and is
-// reached by setting the two env values; nothing here assumes either is up.
+// The chain comes from the SDK's own definitions, not from values written out
+// here: the chain id is signed over, so a pair invented in the app produces
+// signatures the network will not accept. As of genlayer-js 2.0.0-rc.1 the
+// SDK defines studionet (61999, studio.genlayer.com), studioDevnet (61997,
+// studio-dev.genlayer.com) and localnet (61127). 61997 is Devnet on its own
+// host; it is not Studio's chain id.
+//
 // There is no mock chain in this path. Fixture mode is a separate switch and
-// is read in lib/episode.ts, not here.
+// is read in lib/episode.ts.
 
-import { studionet } from "genlayer-js/chains";
+import { localnet, studioDevnet, studionet } from "genlayer-js/chains";
 import type { GenLayerChain } from "genlayer-js/types";
 
-// genlayer-js ships `studionet` as chain 61999 on the Studio endpoint, and
-// the chain id is signed over, so the app defaults to the id the SDK and the
-// network agree on rather than to the one the spec was written against.
-export const STUDIONET = {
-  id: studionet.id,
-  name: "GenLayer Studionet",
-  rpc: studionet.rpcUrls.default.http[0] ?? "https://studio.genlayer.com/api",
-} as const;
-
-export const STUDIO = {
-  id: 61997,
-  name: "GenLayer Studio",
-  rpc: "https://studio.genlayer.com/api",
-} as const;
-
-export const STUDIO_NEXT = {
-  id: 61998,
-  name: "GenLayer Studio Next",
-  rpc: "https://studio-next.genlayer.com/api",
-} as const;
+export const KNOWN: readonly GenLayerChain[] = [studionet, studioDevnet, localnet];
 
 export const ZERO_ADDRESS = `0x${"0".repeat(40)}` as const;
 
@@ -38,18 +24,21 @@ function number(value: string | undefined, fallback: number): number {
 
 export const CHAIN_ID = number(
   process.env.NEXT_PUBLIC_EPISODE_CHAIN_ID,
-  STUDIONET.id,
+  studionet.id,
 );
-export const RPC_URL = process.env.NEXT_PUBLIC_EPISODE_RPC || STUDIONET.rpc;
 
-export const NETWORK_NAME =
-  CHAIN_ID === STUDIONET.id
-    ? STUDIONET.name
-    : CHAIN_ID === STUDIO.id
-      ? STUDIO.name
-      : CHAIN_ID === STUDIO_NEXT.id
-        ? STUDIO_NEXT.name
-        : `chain ${CHAIN_ID}`;
+/** The SDK's definition for this id, when it has one. */
+const matched = KNOWN.find((held) => held.id === CHAIN_ID);
+
+export const RPC_URL =
+  process.env.NEXT_PUBLIC_EPISODE_RPC ||
+  matched?.rpcUrls.default.http[0] ||
+  (studionet.rpcUrls.default.http[0] as string);
+
+export const NETWORK_NAME = matched?.name ?? `chain ${CHAIN_ID}`;
+
+/** True when the id is one the SDK knows, so its consensus contracts apply. */
+export const CHAIN_KNOWN = matched !== undefined;
 
 export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_EPISODE_CONTRACT ||
   ZERO_ADDRESS) as `0x${string}`;
@@ -58,10 +47,16 @@ export const CONTRACT_SET = CONTRACT_ADDRESS !== ZERO_ADDRESS;
 
 export const USING_FIXTURES = process.env.NEXT_PUBLIC_EPISODE_FIXTURES === "1";
 
-/** The chain genlayer-js works against: Studio's shape, this endpoint's id. */
-export const chain: GenLayerChain = {
-  ...studionet,
-  id: CHAIN_ID,
-  name: NETWORK_NAME,
-  rpcUrls: { default: { http: [RPC_URL] } },
-};
+/**
+ * The chain the client works against: the SDK's definition where the id is
+ * one it knows, otherwise Studio's shape with the id and endpoint overridden.
+ */
+export const chain: GenLayerChain =
+  matched && !process.env.NEXT_PUBLIC_EPISODE_RPC
+    ? matched
+    : {
+        ...(matched ?? studionet),
+        id: CHAIN_ID,
+        name: NETWORK_NAME,
+        rpcUrls: { default: { http: [RPC_URL] } },
+      };

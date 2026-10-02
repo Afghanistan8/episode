@@ -153,20 +153,29 @@ cd web && npm install && npm test   # the TypeScript mirrors: 40 tests
 
 ### Deploying
 
-Episode deploys to **Studionet** by default: chain `61999` on
-`https://studio.genlayer.com/api`, which is what `genlayer-js` itself calls
-`studionet`. The chain id is signed over, so it has to be the one the network
-expects — hence the default rather than the `61997` this was first specified
-against. Both of the others are a flag away:
+Episode deploys to **Studionet** by default. The targets are the SDK's own
+chain definitions rather than values written out in this repo, because the
+chain id is signed over and a pair invented here would produce signatures the
+network rejects:
 
 | `EPISODE_NETWORK` | chain | endpoint |
 | --- | --- | --- |
 | `studionet` (default) | 61999 | `https://studio.genlayer.com/api` |
-| `studio` | 61997 | `https://studio.genlayer.com/api` |
-| `studio-next` | 61998 | `https://studio-next.genlayer.com/api` |
+| `studio-devnet` | 61997 | `https://studio-dev.genlayer.com/api` |
+| `localnet` | 61127 | `http://127.0.0.1:4000/api` |
 
-The scripts probe the one you asked for and fall back to another rather than
-hard-failing if it is down.
+Note that `61997` is **Devnet, on its own host** — it is not a second chain id
+for Studio. Anything else goes through `EPISODE_RPC` and `EPISODE_CHAIN_ID`,
+taken as given. The scripts probe the one you asked for and fall back to
+another rather than hard-failing if it is down.
+
+Studio charges fees, so a write is two steps: estimate the policy for the
+concrete call, then submit that estimate's `distribution` and `feeValue` with
+it. `scripts/client.mjs` does this for every write in one place, and because
+the estimate simulates the call, a request the contract would refuse fails
+before anything is sent. Settlement waits for finalization and then checks
+execution separately — a transaction can finalize by consensus and still have
+reverted, and those are two different questions.
 
 ```bash
 npm install
@@ -181,7 +190,7 @@ Switches:
 
 | variable | effect |
 | --- | --- |
-| `EPISODE_NETWORK` | `studionet` (default), `studio` or `studio-next` |
+| `EPISODE_NETWORK` | `studionet` (default), `studio-devnet` or `localnet` |
 | `EPISODE_RPC`, `EPISODE_CHAIN_ID` | an endpoint of your own, taken as given |
 | `EPISODE_CONTRACT` | work against an address already deployed |
 | `EPISODE_RESERVE`, `EPISODE_AWARD`, `EPISODE_STAKE` | seeded amounts, in wei |

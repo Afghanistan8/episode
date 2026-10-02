@@ -4,7 +4,7 @@
 // contract compiled, that its public surface is what you meant to ship, and
 // that the address in .episode-deploy.json is the one carrying it.
 
-import { connect, contractSource, readRecord } from "./client.mjs";
+import { connect, contractSource, readRecord, short } from "./client.mjs";
 
 const EXPECTED = [
   "open_programme",
@@ -30,6 +30,10 @@ const EXPECTED = [
   "programme_version",
   "filing",
   "exhibit_index",
+  "exhibit_blob",
+  "observation",
+  "live_filings",
+  "tagline",
   "round_record",
   "credit_of",
 ];
@@ -57,7 +61,7 @@ async function main() {
     fromChain = methodNames(await client.getContractSchema(record.address));
     console.log(`- deployed contract declares ${fromChain.length} entry points`);
   } catch (error) {
-    console.log(`! no deployed schema to compare: ${error.message}`);
+    console.log(`! no deployed schema to compare: ${short(error)}`);
   }
 
   const names = fromChain ?? fromSource;

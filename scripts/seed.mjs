@@ -9,7 +9,7 @@
 // too, and a sponsor nobody controls cannot fund a reserve, pause a
 // programme, or publish a version.
 
-import { connect, readRecord, settle } from "./client.mjs";
+import { connect, readRecord, write } from "./client.mjs";
 import { detailFrame, identifierFrame, wideFrame } from "./frames.mjs";
 
 const CAT_PROPERTY = 1;
@@ -119,29 +119,32 @@ async function main() {
   const opened = [];
   for (const programme of PROGRAMMES) {
     console.log(`\n* ${programme.label} (${programme.kind})`);
-    const hash = await client.writeContract({
-      account,
-      address,
-      functionName: "open_programme",
-      args: [
-        programme.category,
-        programme.kind,
-        programme.definition,
-        programme.exclusions,
-        programme.criteria,
-        programme.minFrames,
-        programme.views,
-        programme.paperRequired,
-        programme.paperKind,
-        AWARD,
-        STAKE,
-        programme.evidenceWindow,
-        programme.appealWindow,
-        "",
-      ],
-      value: RESERVE,
-    });
-    await settle(client, hash, "open_programme");
+    await write(
+      client,
+      {
+        account,
+        address,
+        functionName: "open_programme",
+        args: [
+          programme.category,
+          programme.kind,
+          programme.definition,
+          programme.exclusions,
+          programme.criteria,
+          programme.minFrames,
+          programme.views,
+          programme.paperRequired,
+          programme.paperKind,
+          AWARD,
+          STAKE,
+          programme.evidenceWindow,
+          programme.appealWindow,
+          "",
+        ],
+        value: RESERVE,
+      },
+      "open_programme",
+    );
     const id = await programmeId(client, address, account);
     opened.push({ ...programme, id });
     console.log(`  programme ${id}, version 1`);
@@ -157,21 +160,24 @@ async function main() {
   // the panel has something to look at rather than something to refuse.
   const gala = opened[0];
   console.log(`\n* a demo filing under programme ${gala.id}`);
-  const lodged = await client.writeContract({
-    account,
-    address,
-    functionName: "lodge",
-    args: [
-      gala.id,
-      1,
-      "Thornbury Assembly Rooms, main floor",
-      "POL-44198",
-      "2026-05-02",
-      "storm water through the roof light",
-    ],
-    value: STAKE,
-  });
-  await settle(client, lodged, "lodge");
+  await write(
+    client,
+    {
+      account,
+      address,
+      functionName: "lodge",
+      args: [
+        gala.id,
+        1,
+        "Thornbury Assembly Rooms, main floor",
+        "POL-44198",
+        "2026-05-02",
+        "storm water through the roof light",
+      ],
+      value: STAKE,
+    },
+    "lodge",
+  );
   const filingCount = await client.readContract({
     account,
     address,
@@ -187,14 +193,16 @@ async function main() {
     ["identifier", identifierFrame(3), "the room plate above the doors"],
   ];
   for (const [view, blob, caption] of exhibits) {
-    const hash = await client.writeContract({
-      account,
-      address,
-      functionName: "attach_exhibit",
-      args: [filingId, new Uint8Array(blob), view, "", caption],
-      value: 0n,
-    });
-    await settle(client, hash, `attach ${view} (${blob.length} bytes)`);
+    await write(
+      client,
+      {
+        account,
+        address,
+        functionName: "attach_exhibit",
+        args: [filingId, new Uint8Array(blob), view, "", caption],
+      },
+      `attach ${view} (${blob.length} bytes)`,
+    );
   }
 
   const preflight = await client.readContract({
