@@ -247,7 +247,7 @@ def test_a_linked_document_is_pulled_once_inside_the_panel(court, ep):
     # The leader pulls it and the validator pulls it, which is how they come
     # to agree on the bytes. Each node pulls it exactly once.
     assert ep.gl.nondet.web.fetched == [url, url]
-    row = court.read("exhibit_index", 0)[2]
+    row = court.exhibits(0)[2]
     assert len(row["sha256"]) == 64
     assert row["size"] != "0"
     body = court.read("exhibit_blob", 0, 2)

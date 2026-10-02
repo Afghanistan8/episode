@@ -90,6 +90,14 @@ export type ExhibitRow = {
   filed_at: string;
 };
 
+/** `exhibit_index` hands back a record carrying its rows, like every other
+ *  view on the contract, so there is one shape to decode. */
+export type ExhibitIndex = {
+  filing: string;
+  count: string;
+  rows: ExhibitRow[];
+};
+
 export type SnapshotRow = {
   exhibit: string;
   sha256: string;

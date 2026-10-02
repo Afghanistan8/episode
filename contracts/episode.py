@@ -2515,8 +2515,18 @@ class Episode(gl.Contract):
         }
 
     @gl.public.view
-    def exhibit_index(self, filing_id: int) -> list:
-        return self._exhibit_rows(filing_id)
+    def exhibit_index(self, filing_id: int) -> dict:
+        """The file, in the order it was built.
+
+        Returned as a record carrying the rows rather than as a bare array:
+        the count is worth having beside them, and every other view on this
+        contract hands back a mapping, so the app decodes one shape.
+        """
+        return {
+            "filing": str(filing_id),
+            "count": str(int(self._filing(filing_id).exhibit_count)),
+            "rows": self._exhibit_rows(filing_id),
+        }
 
     def _exhibit_rows(self, filing_id: int) -> list:
         held = self._filing(filing_id)

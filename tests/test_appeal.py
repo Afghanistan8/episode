@@ -95,7 +95,7 @@ def test_the_sponsor_may_put_frames_on_the_sponsors_own_appeal(court, ep):
     determined(court, ep)
     court.send("appeal", 0, "wrong hall", [], sender=SPONSOR)
     court.attach(0, png(b"sponsor"), "wide", sender=SPONSOR)
-    row = court.read("exhibit_index", 0)[2]
+    row = court.exhibits(0)[2]
     assert row["party"] == "sponsor"
     assert row["new_on_appeal"] is True
 
@@ -112,7 +112,7 @@ def test_the_sponsor_may_not_put_frames_on_the_claimants_appeal(court, ep):
         "attach_exhibit", 0, __import__("helpers").pdf(b"survey"), "", "survey", "",
         sender=SPONSOR,
     )
-    assert court.read("exhibit_index", 0)[2]["party"] == "sponsor"
+    assert court.exhibits(0)[2]["party"] == "sponsor"
 
 
 def test_each_side_is_bounded_on_appeal(court, ep):
@@ -154,7 +154,7 @@ def test_an_appeal_cannot_be_closed_while_its_evidence_period_runs(court, ep):
     # And having waited, the sponsor can still use what is left of it.
     court.tick(ep.APPEAL_EVIDENCE_PERIOD - 10)
     court.attach(0, png(b"sponsor late"), "wide", sender=SPONSOR)
-    assert court.read("exhibit_index", 0)[2]["new_on_appeal"] is True
+    assert court.exhibits(0)[2]["new_on_appeal"] is True
 
 
 def test_an_appeal_that_brought_nothing_new_closes_without_the_grace(court, ep):

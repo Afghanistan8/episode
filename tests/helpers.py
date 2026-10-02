@@ -76,6 +76,10 @@ class Court:
         genlayer.gl.set_clock(self.now)
         return getattr(self.contract, method)(*args, **kwargs)
 
+    def exhibits(self, filing_id=0):
+        """The exhibit rows of one filing, which is what tests want of it."""
+        return self.read("exhibit_index", filing_id)["rows"]
+
     # -- set-up shorthands --------------------------------------------------
 
     def open_programme(self, **over):

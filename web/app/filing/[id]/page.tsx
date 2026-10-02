@@ -28,7 +28,7 @@ import { useRead } from "@/lib/hooks";
 import { digestOf, sniffMedia } from "@/lib/media";
 import { requirementLabel } from "@/lib/outcome";
 import type {
-  ExhibitRow,
+  ExhibitIndex,
   Filing,
   Observation,
   Preflight,
@@ -74,7 +74,7 @@ function FileView({ filing, refresh }: { filing: Filing; refresh: () => void }) 
     Number(filing.programme),
     Number(filing.version),
   ]);
-  const exhibits = useRead<ExhibitRow[]>("exhibit_index", [id]);
+  const exhibits = useRead<ExhibitIndex>("exhibit_index", [id]);
   const observation = useRead<Observation>("observation", [id]);
   const preflight = useRead<Preflight>("panel_preflight", [id]);
 
@@ -86,9 +86,10 @@ function FileView({ filing, refresh }: { filing: Filing; refresh: () => void }) 
     preflight.reload();
   };
 
-  const frames = (exhibits.value ?? []).filter((row) => row.kind === "frame");
-  const papers = (exhibits.value ?? []).filter((row) => row.kind === "paper");
-  const digests = (exhibits.value ?? []).map((row) => row.sha256).filter(Boolean);
+  const rows = exhibits.value?.rows ?? [];
+  const frames = rows.filter((row) => row.kind === "frame");
+  const papers = rows.filter((row) => row.kind === "paper");
+  const digests = rows.map((row) => row.sha256).filter(Boolean);
 
   const open = filing.state === "OPEN";
   const determined = filing.state === "DETERMINED";
@@ -237,11 +238,11 @@ function FileView({ filing, refresh }: { filing: Filing; refresh: () => void }) 
         label={`the file · ${frames.length} frame${frames.length === 1 ? "" : "s"}, ${papers.length} paper${papers.length === 1 ? "" : "s"}`}
       >
         {exhibits.busy && <Waiting what="reading the exhibits" />}
-        {(exhibits.value ?? []).length === 0 && !exhibits.busy && (
+        {rows.length === 0 && !exhibits.busy && (
           <p className="text-sm text-bone-dim">Nothing is on the file yet.</p>
         )}
         <div className="divide-y divide-rule">
-          {(exhibits.value ?? []).map((row) => (
+          {rows.map((row) => (
             <div
               key={row.exhibit}
               className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 py-3.5"

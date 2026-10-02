@@ -22,7 +22,7 @@ def test_a_frame_is_indexed_as_a_frame_and_a_pdf_as_paper(court, ep):
     court.lodge()
     court.attach(0, png(b"wide"), "wide")
     court.attach(0, pdf(), "", "bill of lading", "the consignment note")
-    rows = court.read("exhibit_index", 0)
+    rows = court.exhibits(0)
     assert [r["kind"] for r in rows] == ["frame", "paper"]
     assert [r["media"] for r in rows] == ["png", "other"]
     assert rows[0]["view_label"] == "wide"
@@ -35,7 +35,7 @@ def test_a_photographed_document_is_paper_however_it_is_labelled(court, ep):
     court.open_programme()
     court.lodge()
     court.attach(0, exif_jpeg(b"lading"), "wide")
-    row = court.read("exhibit_index", 0)[0]
+    row = court.exhibits(0)[0]
     assert row["kind"] == "paper"
     assert row["view_label"] == ""
 
@@ -118,7 +118,7 @@ def test_a_linked_document_is_stored_as_a_link_until_the_panel_sits(court, ep):
         "the harbour log for the day",
         sender=CLAIMANT,
     )
-    row = court.read("exhibit_index", 0)[0]
+    row = court.exhibits(0)[0]
     assert row["kind"] == "paper"
     assert row["media"] == "link"
     assert row["sha256"] == ""
@@ -270,3 +270,19 @@ def test_fenced_content_is_bounded(court, ep):
     fenced = ep.fence("claim", "x" * (ep.READING_CHARS + 500))
     assert "...[truncated]" in fenced
     assert len(fenced) < ep.READING_CHARS + 200
+
+
+def test_the_exhibit_index_is_a_record_carrying_its_rows(court, ep):
+    # Every public view hands back a mapping, so the app decodes one shape and
+    # the contract's schema carries no bare array return.
+    court.open_programme()
+    court.lodge()
+    court.stock_file(0)
+    index = court.read("exhibit_index", 0)
+    assert set(index.keys()) == {"filing", "count", "rows"}
+    assert index["filing"] == "0"
+    assert index["count"] == "2"
+    assert [row["exhibit"] for row in index["rows"]] == ["0", "1"]
+    assert court.read("exhibit_index", 0)["count"] == court.read("filing", 0)[
+        "exhibit_count"
+    ]

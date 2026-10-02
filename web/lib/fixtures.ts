@@ -371,8 +371,10 @@ export function fixtureRead<T>(functionName: string, args: CalldataEncodable[]):
       if (!held) throw new Error(`episode/filing-unknown: no filing ${first}`);
       return held as T;
     }
-    case "exhibit_index":
-      return (EXHIBITS[first] ?? []) as T;
+    case "exhibit_index": {
+      const rows = EXHIBITS[first] ?? [];
+      return { filing: first, count: String(rows.length), rows } as T;
+    }
     case "round_record": {
       if (first !== "0") {
         throw new Error(`episode/filing-unknown: filing ${first} has no round`);

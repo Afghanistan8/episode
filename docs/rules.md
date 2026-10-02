@@ -127,7 +127,9 @@ in the contract, not set per programme.
 
 Every exhibit records: whose it is, whether it is a frame or paper, its media,
 its labels, its sha256, its size, whether it was new on appeal, and when it was
-filed.
+filed. `exhibit_index` hands those rows back inside a record, like every other
+view on the contract, so there is one shape to decode and no bare array in the
+contract's schema.
 
 ---
 
