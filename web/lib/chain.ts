@@ -8,6 +8,15 @@
 import { studionet } from "genlayer-js/chains";
 import type { GenLayerChain } from "genlayer-js/types";
 
+// genlayer-js ships `studionet` as chain 61999 on the Studio endpoint, and
+// the chain id is signed over, so the app defaults to the id the SDK and the
+// network agree on rather than to the one the spec was written against.
+export const STUDIONET = {
+  id: studionet.id,
+  name: "GenLayer Studionet",
+  rpc: studionet.rpcUrls.default.http[0] ?? "https://studio.genlayer.com/api",
+} as const;
+
 export const STUDIO = {
   id: 61997,
   name: "GenLayer Studio",
@@ -27,15 +36,20 @@ function number(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-export const CHAIN_ID = number(process.env.NEXT_PUBLIC_EPISODE_CHAIN_ID, STUDIO.id);
-export const RPC_URL = process.env.NEXT_PUBLIC_EPISODE_RPC || STUDIO.rpc;
+export const CHAIN_ID = number(
+  process.env.NEXT_PUBLIC_EPISODE_CHAIN_ID,
+  STUDIONET.id,
+);
+export const RPC_URL = process.env.NEXT_PUBLIC_EPISODE_RPC || STUDIONET.rpc;
 
 export const NETWORK_NAME =
-  CHAIN_ID === STUDIO.id
-    ? STUDIO.name
-    : CHAIN_ID === STUDIO_NEXT.id
-      ? STUDIO_NEXT.name
-      : `chain ${CHAIN_ID}`;
+  CHAIN_ID === STUDIONET.id
+    ? STUDIONET.name
+    : CHAIN_ID === STUDIO.id
+      ? STUDIO.name
+      : CHAIN_ID === STUDIO_NEXT.id
+        ? STUDIO_NEXT.name
+        : `chain ${CHAIN_ID}`;
 
 export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_EPISODE_CONTRACT ||
   ZERO_ADDRESS) as `0x${string}`;

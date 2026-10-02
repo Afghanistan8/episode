@@ -1,7 +1,8 @@
 // Deploy the Episode contract and record where it landed.
 //
-//   EPISODE_PRIVATE_KEY=0x...  npm run deploy
-//   EPISODE_NETWORK=studio-next npm run deploy
+//   EPISODE_PRIVATE_KEY=0x...  npm run deploy          # studionet, chain 61999
+//   EPISODE_NETWORK=studio      npm run deploy          # chain 61997
+//   EPISODE_NETWORK=studio-next npm run deploy          # chain 61998
 //   EPISODE_RPC=http://localhost:4000/api EPISODE_CHAIN_ID=61999 npm run deploy
 
 import { connect, contractSource, settle, writeRecord } from "./client.mjs";

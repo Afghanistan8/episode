@@ -153,11 +153,20 @@ cd web && npm install && npm test   # the TypeScript mirrors: 40 tests
 
 ### Deploying
 
-Episode targets **GenLayer Studio**: chain `61997`, RPC
-`https://studio.genlayer.com/api`. **Studio Next** (`61998`,
-`https://studio-next.genlayer.com/api`) is the alternate; the scripts probe the
-one you asked for and fall back to the other rather than hard-failing if it is
-down.
+Episode deploys to **Studionet** by default: chain `61999` on
+`https://studio.genlayer.com/api`, which is what `genlayer-js` itself calls
+`studionet`. The chain id is signed over, so it has to be the one the network
+expects — hence the default rather than the `61997` this was first specified
+against. Both of the others are a flag away:
+
+| `EPISODE_NETWORK` | chain | endpoint |
+| --- | --- | --- |
+| `studionet` (default) | 61999 | `https://studio.genlayer.com/api` |
+| `studio` | 61997 | `https://studio.genlayer.com/api` |
+| `studio-next` | 61998 | `https://studio-next.genlayer.com/api` |
+
+The scripts probe the one you asked for and fall back to another rather than
+hard-failing if it is down.
 
 ```bash
 npm install
@@ -172,7 +181,7 @@ Switches:
 
 | variable | effect |
 | --- | --- |
-| `EPISODE_NETWORK` | `studio` (default) or `studio-next` |
+| `EPISODE_NETWORK` | `studionet` (default), `studio` or `studio-next` |
 | `EPISODE_RPC`, `EPISODE_CHAIN_ID` | an endpoint of your own, taken as given |
 | `EPISODE_CONTRACT` | work against an address already deployed |
 | `EPISODE_RESERVE`, `EPISODE_AWARD`, `EPISODE_STAKE` | seeded amounts, in wei |
@@ -195,7 +204,7 @@ npm run dev
 ```
 
 ```
-NEXT_PUBLIC_EPISODE_CHAIN_ID=61997
+NEXT_PUBLIC_EPISODE_CHAIN_ID=61999
 NEXT_PUBLIC_EPISODE_RPC=https://studio.genlayer.com/api
 NEXT_PUBLIC_EPISODE_CONTRACT=0x…
 ```

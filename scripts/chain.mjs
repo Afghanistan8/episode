@@ -8,6 +8,16 @@
 
 import { studionet } from "genlayer-js/chains";
 
+// genlayer-js ships `studionet` as chain 61999 on the Studio endpoint. The
+// chain id is signed over, so it has to be the one the network expects --
+// hence a target of its own rather than a note in the README.
+export const STUDIONET = {
+  key: "studionet",
+  id: studionet.id,
+  name: "GenLayer Studionet",
+  rpc: studionet.rpcUrls.default.http[0],
+};
+
 export const STUDIO = {
   key: "studio",
   id: 61997,
@@ -22,7 +32,7 @@ export const STUDIO_NEXT = {
   rpc: "https://studio-next.genlayer.com/api",
 };
 
-export const TARGETS = [STUDIO, STUDIO_NEXT];
+export const TARGETS = [STUDIONET, STUDIO, STUDIO_NEXT];
 
 /** A genlayer-js chain for one of the targets above, or for an env override. */
 export function chainFor(target) {
@@ -42,7 +52,7 @@ function fromEnv() {
 }
 
 function asked() {
-  const want = (process.env.EPISODE_NETWORK || STUDIO.key).toLowerCase();
+  const want = (process.env.EPISODE_NETWORK || STUDIONET.key).toLowerCase();
   const found = TARGETS.find((t) => t.key === want || String(t.id) === want);
   if (!found) {
     const known = TARGETS.map((t) => `${t.key} (${t.id})`).join(", ");
@@ -80,12 +90,14 @@ export async function resolveTarget() {
   if (await reachable(first)) {
     return { target: first, probed: true, fellBack: false };
   }
-  const other = TARGETS.find((t) => t.key !== first.key);
-  if (other && (await reachable(other))) {
-    return { target: other, probed: true, fellBack: true, insteadOf: first };
+  for (const other of TARGETS) {
+    if (other.key === first.key) continue;
+    if (await reachable(other)) {
+      return { target: other, probed: true, fellBack: true, insteadOf: first };
+    }
   }
   throw new Error(
-    `neither ${first.name} (${first.rpc}) nor ${other.name} (${other.rpc}) ` +
+    `none of ${TARGETS.map((t) => `${t.name} (${t.rpc})`).join(", ")} ` +
       `answered. Set EPISODE_RPC to an endpoint you can reach.`,
   );
 }
