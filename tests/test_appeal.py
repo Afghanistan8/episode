@@ -142,10 +142,27 @@ def test_an_appeal_that_brought_nothing_new_cannot_be_reheard(court, ep):
     assert ep.gl.nondet.calls == []
 
 
-def test_an_appeal_that_brought_nothing_new_closes_at_once(court, ep):
+def test_an_appeal_cannot_be_closed_while_its_evidence_period_runs(court, ep):
+    # The appellant was given that period to file something new and does not
+    # lose it to whoever calls close_appeal first.
     determined(court, ep)
     court.send("appeal", 0, "wrong hall", [], sender=SPONSOR)
-    # No waiting: there is nothing a second panel could read.
+    with pytest.raises(ep.gl.vm.UserError) as bad:
+        court.send("close_appeal", 0, sender=BYSTANDER)
+    assert ep.E_APPEAL_EVIDENCE_OPEN in str(bad.value)
+    assert "keeps every hour of it" in str(bad.value)
+    # And having waited, the sponsor can still use what is left of it.
+    court.tick(ep.APPEAL_EVIDENCE_PERIOD - 10)
+    court.attach(0, png(b"sponsor late"), "wide", sender=SPONSOR)
+    assert court.read("exhibit_index", 0)[2]["new_on_appeal"] is True
+
+
+def test_an_appeal_that_brought_nothing_new_closes_without_the_grace(court, ep):
+    determined(court, ep)
+    court.send("appeal", 0, "wrong hall", [], sender=SPONSOR)
+    court.tick(ep.APPEAL_EVIDENCE_PERIOD + 1)
+    # No further waiting: there is nothing a second panel could read, so the
+    # rehearing grace would be three days spent on nobody.
     assert court.send("close_appeal", 0, sender=BYSTANDER) == "ESTABLISHED"
     filing = court.read("filing", 0)
     assert filing["state"] == "FINAL"
@@ -157,10 +174,11 @@ def test_an_appeal_that_brought_something_new_waits_out_the_grace(court, ep):
     determined(court, ep)
     court.send("appeal", 0, "wrong hall", [], sender=SPONSOR)
     court.attach(0, png(b"sponsor"), "wide", sender=SPONSOR)
+    court.tick(ep.APPEAL_EVIDENCE_PERIOD + 1)
     with pytest.raises(ep.gl.vm.UserError) as bad:
         court.send("close_appeal", 0, sender=BYSTANDER)
     assert ep.E_REHEARING_EARLY in str(bad.value)
-    court.tick(ep.APPEAL_EVIDENCE_PERIOD + ep.REHEARING_GRACE + 1)
+    court.tick(ep.REHEARING_GRACE)
     assert court.send("close_appeal", 0, sender=BYSTANDER) == "ESTABLISHED"
 
 

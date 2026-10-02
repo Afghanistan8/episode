@@ -419,7 +419,7 @@ function FileView({ filing, refresh }: { filing: Filing; refresh: () => void }) 
               />
               <Move
                 heading="Close the appeal"
-                note="At once if the appellant filed nothing new, since there is nothing a second panel could read. Otherwise after the rehearing grace. The appealed finding stands."
+                note="Not while the appeal evidence period runs — the appellant keeps every hour of it. Once it has shut: at once if the appellant filed nothing new, since there is nothing a second panel could read, otherwise after the rehearing grace. Either way the appealed finding stands."
                 title={`Close the appeal on filing ${filing.filing}. ${filing.appealed_outcome} stands.`}
                 label="close the appeal"
                 tx={call("close_appeal", [id])}

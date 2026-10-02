@@ -172,6 +172,7 @@ E_CRITERIA = "episode/criteria-count"
 E_VIEW_UNKNOWN = "episode/view-unknown"
 E_WINDOW = "episode/window-bounds"
 E_AWARD = "episode/award-zero"
+E_FUND_ZERO = "episode/funding-nothing"
 E_STAKE = "episode/stake-zero"
 E_ASSESSOR_IS_SPONSOR = "episode/assessor-is-sponsor"
 E_PROGRAMME = "episode/programme-unknown"
@@ -553,6 +554,7 @@ def rounds_agree(mine: dict, theirs: dict) -> bool:
 
       * a frame this node saw that the leader left out of its sightings --
         a leader cannot drop a photograph to get the answer it wants
+        (R-PNL-4)
       * a different outcome, or the same outcome reached under a different
         rule -- doubt stands unless this node would establish
       * a different set of failed requirements -- a rejection has to be
@@ -561,6 +563,9 @@ def rounds_agree(mine: dict, theirs: dict) -> bool:
         thing about what the evidence carried
       * a record that does not follow from the ratings it ships with, so a
         leader cannot read as doubt here and as established on the file
+        (R-EQV-4)
+      * a record missing any structural field, so the writer never has to
+        guess a key (R-EQV-5)
     """
     if not isinstance(theirs, dict):
         return False
@@ -1046,7 +1051,8 @@ class Episode(gl.Contract):
                 kind=kind,
                 current_version=u32(1),
                 paused=False,
-                balance=u256(int(gl.message.value)),
+                # The attached value is the reserve. R-PRG-6.
+            balance=u256(int(gl.message.value)),
                 committed=u256(0),
                 paid=u256(0),
                 opened_at=u64(now),
@@ -1133,7 +1139,7 @@ class Episode(gl.Contract):
         programme = self._programme(programme_id)
         added = int(gl.message.value)
         if added <= 0:
-            _refuse(E_AWARD, "funding a reserve with nothing funds nothing")
+            _refuse(E_FUND_ZERO, "funding a reserve with nothing funds nothing")
         self.programmes[programme_id].balance = u256(int(programme.balance) + added)
         return str(int(self.programmes[programme_id].balance))
 
@@ -1204,6 +1210,7 @@ class Episode(gl.Contract):
             )
         if not definition.strip():
             _refuse(E_DEFINITION, "a programme has to say what must be true")
+        # R-PRG-3.
         if len(criteria) < CRITERIA_MIN or len(criteria) > CRITERIA_MAX:
             _refuse(
                 E_CRITERIA,
@@ -1227,6 +1234,7 @@ class Episode(gl.Contract):
                 )
             if view not in views:
                 views.append(view)
+        # R-PRG-11.
         floor = max(1, len(views))
         if int(min_frames) < floor:
             _refuse(
@@ -1236,6 +1244,7 @@ class Episode(gl.Contract):
                 + " scene photograph(s) to cover its required views; got "
                 + str(min_frames),
             )
+        # R-PRG-5.
         if int(award) <= 0:
             _refuse(E_AWARD, "a benefit of nothing is not a benefit")
         if int(stake) <= 0:
@@ -1337,6 +1346,7 @@ class Episode(gl.Contract):
             )
         bound = self._version(programme_id, int(version))
 
+        # R-FIL-9.
         if not subject_label.strip():
             _refuse(E_SUBJECT, "name the property, vehicle, consignment or premises")
         if not subject_identifier.strip():
@@ -1352,6 +1362,7 @@ class Episode(gl.Contract):
                 "event date is a calendar day as YYYY-MM-DD; got "
                 + repr(event_date),
             )
+        # R-FIL-8.
         cause = declared_cause.strip()
         if not cause:
             _refuse(E_CAUSE_BLANK, "say what the filer says caused this")
@@ -1362,6 +1373,7 @@ class Episode(gl.Contract):
                 "cause; damage has to name one",
             )
 
+        # R-FIL-2: the bond is exactly the bond, not at least it.
         stake = int(bound.stake)
         posted = int(gl.message.value)
         if posted != stake:
@@ -1376,6 +1388,8 @@ class Episode(gl.Contract):
                 + " was posted",
             )
 
+        # R-FIL-3 and R-FIL-4: the award is committed here, out of idle
+        # reserve, so no two filings are ever promised the same money.
         award = int(bound.award)
         idle = self._idle(programme)
         if idle < award:
@@ -1539,6 +1553,7 @@ class Episode(gl.Contract):
         who = self._sender()
         party = self._party_of(filing, programme, who)
 
+        # R-EXH-9.
         raw = bytes(blob)
         if len(raw) == 0:
             _refuse(E_EMPTY, "an exhibit of no bytes is not an exhibit")
@@ -2311,8 +2326,11 @@ class Episode(gl.Contract):
     def close_appeal(self, filing_id: int) -> str:
         """Close an appeal without a rehearing. The appealed finding stands.
 
-        Open at once when the appellant filed nothing new, because there is
-        nothing a second panel could read. Otherwise it waits out the
+        It waits for the appeal evidence period either way: the appellant
+        was given that period to file something new and does not lose it to
+        whoever calls this first. Once the period has shut, an appeal that
+        brought nothing new closes at once, because there is nothing a second
+        panel could read; one that brought something new waits out the
         rehearing grace, so whoever wanted the rehearing has had the time to
         ask for it. R-FIL-7.
         """
@@ -2323,9 +2341,17 @@ class Episode(gl.Contract):
                 "only a filing UNDER_APPEAL is closed this way; this one is "
                 + STATE_NAMES[int(filing.state)],
             )
+        now = _clock()
+        if now <= int(filing.appeal_evidence_deadline):
+            _refuse(
+                E_APPEAL_EVIDENCE_OPEN,
+                "the appeal evidence period runs until "
+                + str(int(filing.appeal_evidence_deadline))
+                + ", and the appellant keeps every hour of it",
+            )
         if self._appellant_brought_new(filing_id):
             due = int(filing.appeal_evidence_deadline) + REHEARING_GRACE
-            if _clock() <= due:
+            if now <= due:
                 _refuse(
                     E_REHEARING_EARLY,
                     "the appellant filed something new, so a rehearing may be "
