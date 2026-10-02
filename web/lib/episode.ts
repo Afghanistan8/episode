@@ -18,7 +18,7 @@ import {
 } from "@genlayer/transaction-kit";
 import { createMockKit } from "@genlayer/transaction-kit-react";
 
-import { CONTRACT_ADDRESS, CONTRACT_SET, USING_FIXTURES, chain } from "./chain";
+import { CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, chain } from "./chain";
 import { fixtureRead } from "./fixtures";
 
 /** Calldata comes back with Maps in it. Flatten to plain data once, here. */
@@ -42,7 +42,10 @@ export function plain(value: unknown): unknown {
 let reader: GenLayerClient<GenLayerChain> | null = null;
 
 function client(): GenLayerClient<GenLayerChain> {
-  reader ??= createClient({ chain });
+  // `endpoint` as well as the chain's own rpcUrls, so the client cannot end
+  // up reading from the SDK's URL for this chain rather than the configured
+  // one.
+  reader ??= createClient({ chain, endpoint: RPC_URL });
   return reader;
 }
 

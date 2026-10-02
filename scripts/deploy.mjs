@@ -48,6 +48,9 @@ async function main() {
   }
 
   console.log(`- Episode is at ${address}`);
+  if (target.explorer) {
+    console.log(`- ${target.explorer}/address/${address}`);
+  }
   await writeRecord({
     address,
     chainId: target.id,
@@ -57,6 +60,9 @@ async function main() {
     deployedAt: new Date().toISOString(),
     transaction: hash,
     runner: pin.trim(),
+    explorer: target.explorer
+      ? `${target.explorer}/address/${address}`
+      : "",
   });
 
   console.log("");

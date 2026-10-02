@@ -47,16 +47,35 @@ export const CONTRACT_SET = CONTRACT_ADDRESS !== ZERO_ADDRESS;
 
 export const USING_FIXTURES = process.env.NEXT_PUBLIC_EPISODE_FIXTURES === "1";
 
+export const EXPLORER_URL =
+  CHAIN_ID === studionet.id
+    ? "https://explorer-studio.genlayer.com"
+    : (matched?.blockExplorers?.default?.url ?? "");
+
+export const explorerAddress = (address: string): string =>
+  EXPLORER_URL ? `${EXPLORER_URL}/address/${address}` : "";
+
 /**
- * The chain the client works against: the SDK's definition where the id is
- * one it knows, otherwise Studio's shape with the id and endpoint overridden.
+ * The chain the client works against.
+ *
+ * The SDK's definition carries the consensus and fee contract addresses, so
+ * it is used whole wherever the id is one the SDK knows; only the endpoint is
+ * ever overridden. An unknown id keeps Studio's shape, which is why
+ * `CHAIN_KNOWN` is exported -- a page can say so rather than letting a write
+ * fail at signing time with "consensus main contract address not found".
  */
-export const chain: GenLayerChain =
-  matched && !process.env.NEXT_PUBLIC_EPISODE_RPC
-    ? matched
-    : {
-        ...(matched ?? studionet),
-        id: CHAIN_ID,
-        name: NETWORK_NAME,
-        rpcUrls: { default: { http: [RPC_URL] } },
-      };
+export const chain: GenLayerChain = (() => {
+  const base = matched ?? studionet;
+  if (base.rpcUrls.default.http[0] === RPC_URL && base.id === CHAIN_ID) {
+    return base;
+  }
+  return {
+    ...base,
+    id: CHAIN_ID,
+    name: NETWORK_NAME,
+    rpcUrls: {
+      ...base.rpcUrls,
+      default: { ...base.rpcUrls.default, http: [RPC_URL] },
+    },
+  };
+})();

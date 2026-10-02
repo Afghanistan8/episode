@@ -169,13 +169,25 @@ for Studio. Anything else goes through `EPISODE_RPC` and `EPISODE_CHAIN_ID`,
 taken as given. The scripts probe the one you asked for and fall back to
 another rather than hard-failing if it is down.
 
-Studio charges fees, so a write is two steps: estimate the policy for the
-concrete call, then submit that estimate's `distribution` and `feeValue` with
-it. `scripts/client.mjs` does this for every write in one place, and because
-the estimate simulates the call, a request the contract would refuse fails
-before anything is sent. Settlement waits for finalization and then checks
-execution separately — a transaction can finalize by consensus and still have
-reverted, and those are two different questions.
+Whether a deployment prices a write varies, so `scripts/client.mjs` asks
+rather than assumes: it estimates the fee policy for the concrete call and
+submits that estimate's `distribution` and `feeValue` with the write, and on a
+deployment with no fee API or no fee config it says so and submits without a
+deposit. Writes succeed either way. The estimate also simulates the call, so a
+request the contract would refuse fails before anything is sent.
+
+The chain object handed to the client is the SDK's own definition, used whole.
+That matters beyond the chain id: the definition carries the consensus and fee
+contract addresses, and a hand-rolled one leaves them wrong for the id, which
+surfaces as "consensus main contract address not found" from *inside* the send,
+after signing. An id the SDK does not define is refused up front rather than
+guessed at. `EPISODE_RPC` overrides only the endpoint, and is passed to the
+client as well as forced into the definition so neither can read the other's
+URL by accident.
+
+Settlement waits for finalization and then checks execution separately — a
+transaction can finalize by consensus and still have reverted, and those are
+two different questions.
 
 ```bash
 npm install

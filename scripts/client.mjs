@@ -47,7 +47,14 @@ export async function connect() {
     console.log(`! ${insteadOf.name} did not answer; using ${target.name}`);
   }
   const signer = account();
-  const client = createClient({ chain: target.chain, account: signer });
+  // `endpoint` as well as the chain's own rpcUrls: the SDK ships a URL per
+  // named chain, and if that ever diverges from the one being advertised the
+  // client would quietly read and write against a different node.
+  const client = createClient({
+    chain: target.chain,
+    endpoint: target.rpc,
+    account: signer,
+  });
   console.log(`- ${target.name} (chain ${target.id}) at ${target.rpc}`);
   console.log(`- signing as ${signer.address}`);
   return { client, target, account: signer };
