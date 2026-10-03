@@ -2,16 +2,19 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 
+vi.mock("next/navigation", () => ({ usePathname: () => "/" }));
+
 import { WalletConnect } from "../components/WalletConnect";
+import { Shell } from "../components/Shell";
 import { selectNetwork, WalletPickerView, WalletSession, type InjectedProvider } from "../lib/wallet";
 
 describe("server-rendered wallet control", () => {
   it("renders connect before provider discovery or hydration", () => {
-    const html = renderToStaticMarkup(
-      createElement(WalletSession, null, createElement(WalletConnect)),
-    );
-    expect(html).toContain(">connect</button>");
-    expect(html).not.toContain("hidden");
+    const html = renderToStaticMarkup(createElement(WalletSession, null,
+      createElement(Shell, null, createElement(WalletConnect)),
+    ));
+    expect(html).toContain(">connect</a>");
+    expect(html).toContain("?connect=1");
   });
 });
 

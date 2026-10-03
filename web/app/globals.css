@@ -387,6 +387,14 @@ body {
   background: transparent;
 }
 
+.wallet-server-trigger {
+  display: inline-flex;
+}
+
+html[data-wallet-hydrated="true"] .wallet-server-trigger {
+  display: none;
+}
+
 .wallet-trigger:hover,
 .wallet-disconnect:hover {
   border-color: var(--color-seal);

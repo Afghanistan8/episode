@@ -119,6 +119,18 @@ export function WalletSession({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    document.documentElement.dataset.walletHydrated = "true";
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("connect") === "1") {
+      setPickerOpen(true);
+      window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+    }
+    return () => {
+      delete document.documentElement.dataset.walletHydrated;
+    };
+  }, []);
+
+  useEffect(() => {
     const onAnnouncement = (event: Event) => {
       const detail = (event as CustomEvent<Announcement>).detail;
       if (!detail?.provider?.request || !detail.info?.uuid) return;

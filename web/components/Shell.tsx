@@ -38,6 +38,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 {CONTRACT_SET ? shortAddress(CONTRACT_ADDRESS) : "Contract pending"}
               </span>
             </div>
+            <Link href="?connect=1" className="wallet-trigger wallet-server-trigger">
+              connect
+            </Link>
             <WalletConnect />
           </div>
         </div>
