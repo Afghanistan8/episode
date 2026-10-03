@@ -390,6 +390,7 @@ body {
 
 .wallet-trigger:disabled { opacity: 0.6; cursor: wait; }
 .wallet-trigger-connected { text-transform: none; letter-spacing: 0; }
+.wallet-network-alert { color: var(--color-ochre); font-size: 0.58rem; }
 .wallet-disconnect { min-height: 2.25rem; padding: 0 0.55rem; font-size: 1.1rem; }
 
 .wallet-indicator {

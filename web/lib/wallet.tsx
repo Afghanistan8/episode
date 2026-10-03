@@ -18,7 +18,7 @@ export type InjectedProvider = {
   removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
 };
 
-type WalletOption = {
+export type WalletOption = {
   id: string;
   name: string;
   provider: InjectedProvider;
@@ -231,36 +231,59 @@ export function WalletSession({ children }: { children: ReactNode }) {
 
   return <WalletContext.Provider value={value}>
     {children}
-    {pickerOpen && <div className="wallet-shade" onMouseDown={() => setPickerOpen(false)}>
+    {pickerOpen && <WalletPickerView
+      options={options}
+      discovering={discovering}
+      connecting={connecting}
+      error={error}
+      onClose={() => setPickerOpen(false)}
+      onRescan={rescan}
+      onConnect={connect}
+    />}
+  </WalletContext.Provider>;
+}
+
+export function WalletPickerView({
+  options, discovering, connecting, error, onClose, onRescan, onConnect,
+}: {
+  options: WalletOption[];
+  discovering: boolean;
+  connecting: boolean;
+  error: string;
+  onClose: () => void;
+  onRescan: () => void;
+  onConnect: (option: WalletOption) => Promise<void>;
+}) {
+  return <div className="wallet-shade" onMouseDown={onClose}>
       <section
         className="wallet-dialog sheet"
         role="dialog"
         aria-modal="true"
         aria-labelledby="wallet-title"
         onMouseDown={(event) => event.stopPropagation()}
-        onKeyDown={(event) => { if (event.key === "Escape") setPickerOpen(false); }}
+        onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}
       >
         <div className="wallet-dialog-heading">
           <div>
             <p className="marginal">Account access</p>
             <h2 id="wallet-title">Choose a wallet</h2>
           </div>
-          <button type="button" className="press" onClick={() => setPickerOpen(false)} aria-label="Close wallet chooser" autoFocus>close</button>
+          <button type="button" className="press" onClick={onClose} aria-label="Close wallet chooser" autoFocus>close</button>
         </div>
         <p className="wallet-hint">Connect an installed wallet to sign Episode transactions on {chain.name}.</p>
         {error && <p className="wallet-error" role="alert">{error}</p>}
         {discovering && options.length === 0 ? <p className="wallet-hint" role="status">Searching for browser wallets…</p>
           : options.length === 0 ? <div className="wallet-empty">
           <p>No browser wallet was found.</p>
-          <a href="https://metamask.io/download/" target="_blank" rel="noreferrer" className="press press-filled">Get a wallet</a>
-          <button type="button" className="press" onClick={rescan}>search again</button>
+          <a href="https://metamask.io/download" target="_blank" rel="noreferrer" className="press press-filled">Get a compatible wallet</a>
+          <button type="button" className="press" onClick={onRescan}>search again</button>
         </div> : <div className="wallet-options">
           {options.map((option) => <button
             key={option.id}
             type="button"
             className="wallet-option"
             disabled={connecting}
-            onClick={() => void connect(option)}
+            onClick={() => void onConnect(option)}
           >
             <span className="wallet-option-mark" aria-hidden="true">{option.name.slice(0, 1).toUpperCase()}</span>
             <span>{option.name}</span>
@@ -268,8 +291,7 @@ export function WalletSession({ children }: { children: ReactNode }) {
           </button>)}
         </div>}
       </section>
-    </div>}
-  </WalletContext.Provider>;
+    </div>;
 }
 
 export function useWallet(): WalletState {

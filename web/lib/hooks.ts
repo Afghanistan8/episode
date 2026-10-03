@@ -6,7 +6,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CalldataEncodable } from "genlayer-js/types";
 
-import { describeRefusal, read } from "./episode";
+import { read, readDiagnostic } from "./episode";
+import { withReadDeadline } from "./read-deadline";
 
 export type Reading<T> = {
   value: T | null;
@@ -19,42 +20,44 @@ export function useRead<T>(
   functionName: string | null,
   args: CalldataEncodable[] = [],
 ): Reading<T> {
-  const [value, setValue] = useState<T | null>(null);
-  const [busy, setBusy] = useState(functionName !== null);
-  const [error, setError] = useState("");
   const [turn, setTurn] = useState(0);
   const key = JSON.stringify(args, (_, held) =>
     typeof held === "bigint" ? held.toString() : held,
   );
+  const requestKey = `${functionName ?? ""}:${key}:${turn}`;
+  const [reading, setReading] = useState({
+    key: requestKey,
+    value: null as T | null,
+    busy: functionName !== null,
+    error: "",
+  });
 
   useEffect(() => {
     if (functionName === null) {
-      setBusy(false);
+      setReading({ key: requestKey, value: null, busy: false, error: "" });
       return;
     }
     let live = true;
-    setBusy(true);
-    setError("");
+    setReading({ key: requestKey, value: null, busy: true, error: "" });
     read<T>(functionName, JSON.parse(key) as CalldataEncodable[])
       .then((held) => {
-        if (live) setValue(held);
+        if (live) setReading({ key: requestKey, value: held, busy: false, error: "" });
       })
       .catch((trouble) => {
         if (live) {
-          setValue(null);
-          setError(describeRefusal(trouble));
+          setReading({ key: requestKey, value: null, busy: false, error: readDiagnostic(trouble) });
         }
-      })
-      .finally(() => {
-        if (live) setBusy(false);
       });
     return () => {
       live = false;
     };
-  }, [functionName, key, turn]);
+  }, [functionName, key, requestKey]);
 
   const reload = useCallback(() => setTurn((n) => n + 1), []);
-  return { value, busy, error, reload };
+  const current = reading.key === requestKey
+    ? reading
+    : { value: null, busy: functionName !== null, error: "" };
+  return { value: current.value, busy: current.busy, error: current.error, reload };
 }
 
 /** A count, then one read per index. Used for the programme and filing lists. */
@@ -72,18 +75,22 @@ export function useList<T>(
     let live = true;
     setBusy(true);
     setError("");
-    (async () => {
+    withReadDeadline(async () => {
       const count = Number(await read<number | string>(countFn, []));
-      const wanted = Number.isFinite(count) ? count : 0;
-      const held = await Promise.all(
-        Array.from({ length: wanted }, (_, index) => read<T>(itemFn, [index])),
+      if (!Number.isSafeInteger(count) || count < 0) {
+        throw new Error(`${countFn} returned an invalid count.`);
+      }
+      return Promise.all(
+        Array.from({ length: count }, (_, index) => read<T>(itemFn, [index])),
       );
-      if (live) setRows(held);
-    })()
+    }, `${itemFn} list`)
+      .then((held) => {
+        if (live) setRows(held);
+      })
       .catch((trouble) => {
         if (live) {
           setRows([]);
-          setError(describeRefusal(trouble));
+          setError(readDiagnostic(trouble));
         }
       })
       .finally(() => {

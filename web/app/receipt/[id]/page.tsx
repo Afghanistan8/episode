@@ -21,10 +21,13 @@ export default function ReceiptPage() {
 
   if (receipt.busy) return <Waiting what="reading the receipt" />;
   if (!receipt.value) {
+    const missing = !receipt.error || receipt.error.startsWith("episode/filing-unknown");
     return (
       <div className="mx-auto w-full max-w-3xl px-4 pt-16 sm:px-6">
         <p className="marginal">receipt {params.id}</p>
-        <h1 className="display mt-4 text-3xl">There is no such receipt.</h1>
+        <h1 className="display mt-4 text-3xl">
+          {missing ? "There is no such receipt." : "The receipt could not be read."}
+        </h1>
         <Refusal>{receipt.error}</Refusal>
         <Link href="/" className="press mt-6 inline-block">
           back to the start

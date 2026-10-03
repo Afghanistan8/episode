@@ -21,6 +21,7 @@ import { createMockKit } from "@genlayer/transaction-kit-react";
 
 import { CHAIN_ID, CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, chain } from "./chain";
 import { fixtureRead } from "./fixtures";
+import { withReadDeadline } from "./read-deadline";
 import type { InjectedProvider } from "./wallet";
 
 /** Calldata comes back with Maps in it. Flatten to plain data once, here. */
@@ -70,25 +71,27 @@ export async function read<T>(
 ): Promise<T> {
   if (USING_FIXTURES) return fixtureRead<T>(functionName, args);
   if (!CONTRACT_SET) throw new NotDeployed();
-  if (CHAIN_ID === stableStudionet.id) {
-    stableReader ??= createStableClient({
-      chain: stableStudionet,
-      endpoint: RPC_URL,
-    });
-    const answer = await stableReader.readContract({
+  return withReadDeadline(async () => {
+    if (CHAIN_ID === stableStudionet.id) {
+      stableReader ??= createStableClient({
+        chain: stableStudionet,
+        endpoint: RPC_URL,
+      });
+      const answer = await stableReader.readContract({
+        address: CONTRACT_ADDRESS,
+        functionName,
+        args,
+      });
+      return plain(answer) as T;
+    }
+    const answer = await client().readContract({
       address: CONTRACT_ADDRESS,
       functionName,
       args,
+      jsonSafeReturn: true,
     });
     return plain(answer) as T;
-  }
-  const answer = await client().readContract({
-    address: CONTRACT_ADDRESS,
-    functionName,
-    args,
-    jsonSafeReturn: true,
-  });
-  return plain(answer) as T;
+  }, functionName);
 }
 
 /** A view that is allowed to refuse: an unknown id is a 404, not a crash. */
@@ -99,7 +102,7 @@ export async function tryRead<T>(
   try {
     return { ok: true, value: await read<T>(functionName, args) };
   } catch (error) {
-    return { ok: false, error: describeRefusal(error) };
+    return { ok: false, error: readDiagnostic(error) };
   }
 }
 
@@ -110,7 +113,10 @@ export async function tryRead<T>(
  */
 export function describeRefusal(error: unknown): string {
   const text =
-    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+    error instanceof Error ? error.message
+      : typeof error === "string" ? error
+      : error && typeof error === "object" && "message" in error
+        ? String(error.message) : "";
   const found = text.match(/episode\/[a-z-]+:[^"'\n}]*/);
   if (found) return found[0].trim();
   return text || "the call failed and said nothing about why";
@@ -131,6 +137,10 @@ export function transactionKit(account?: `0x${string}`, provider?: InjectedProvi
   if (USING_FIXTURES) return createMockKit({ queueAhead: 1 });
   if (!provider) return null;
   return createTransactionKit({ chain, provider, account });
+}
+
+export function readDiagnostic(error: unknown): string {
+  return `${describeRefusal(error)} RPC: ${RPC_URL}; chain: ${CHAIN_ID}; contract: ${CONTRACT_ADDRESS}.`;
 }
 
 export { CONTRACT_ADDRESS, CONTRACT_SET, USING_FIXTURES };

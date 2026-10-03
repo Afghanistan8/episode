@@ -6,6 +6,7 @@
 // kit. Both use the wallet selected in the site header.
 
 import { useEffect, useMemo, useState } from "react";
+import { studionet } from "genlayer-js-stable/chains";
 import type { SubmitInput, TrackedStatus } from "@genlayer/transaction-kit";
 import { GenLayerTransactionPanel } from "@genlayer/transaction-kit-react";
 import "@genlayer/transaction-kit-react/styles.css";
@@ -13,6 +14,7 @@ import "@genlayer/transaction-kit-react/styles.css";
 import { CHAIN_ID, CONTRACT_SET, NETWORK_NAME, USING_FIXTURES } from "@/lib/chain";
 import { transactionKit } from "@/lib/episode";
 import { useWallet } from "@/lib/wallet";
+import { payableValueError } from "@/lib/write-value";
 import { StableSubmit } from "./StableSubmit";
 
 export type SubmitProps = {
@@ -33,8 +35,12 @@ export type SubmitProps = {
 };
 
 export function Submit(props: SubmitProps) {
-  if (!USING_FIXTURES && CHAIN_ID === 61999) return <StableSubmit {...props} />;
-  return <PreviewSubmit {...props} />;
+  const safe = {
+    ...props,
+    blocked: props.blocked ?? payableValueError(props.tx, props.value ?? 0n),
+  };
+  if (!USING_FIXTURES && CHAIN_ID === studionet.id) return <StableSubmit {...safe} />;
+  return <PreviewSubmit {...safe} />;
 }
 
 function PreviewSubmit({

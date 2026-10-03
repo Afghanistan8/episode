@@ -9,6 +9,7 @@ import { CONTRACT_SET, NETWORK_NAME, RPC_URL } from "@/lib/chain";
 import { describeRefusal } from "@/lib/episode";
 import { gen } from "@/lib/format";
 import { useWallet } from "@/lib/wallet";
+import { payableValueError } from "@/lib/write-value";
 
 import type { SubmitProps } from "./Submit";
 
@@ -84,7 +85,13 @@ export function StableSubmit({
       });
       const studio = transaction as unknown as StudioTransaction;
       if (!successful(studio)) {
-        throw new Error(`Studionet finalized the transaction as ${studio.result_name ?? studio.resultName ?? "unknown"}.`);
+        const serialized = JSON.stringify(transaction, (_, held) =>
+          typeof held === "bigint" ? held.toString() : held);
+        const refusal = describeRefusal(serialized);
+        throw new Error(
+          `Studionet finalized the transaction as ${studio.result_name ?? studio.resultName ?? "unknown"}.` +
+          (refusal.startsWith("episode/") ? ` ${refusal}` : ""),
+        );
       }
       setFinished(true);
       onDone?.({
@@ -103,6 +110,8 @@ export function StableSubmit({
 
   async function submit() {
     if (hash || !account || !provider || !tx || tx.kind !== "write") return;
+    const valueError = payableValueError(tx, value);
+    if (valueError) { setTrouble(valueError); return; }
     setWorking(true);
     setTrouble("");
     try {

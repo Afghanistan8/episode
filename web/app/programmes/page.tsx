@@ -8,6 +8,7 @@ import Link from "next/link";
 
 import { CategoryGlyph } from "@/components/Mark";
 import { Submit } from "@/components/Submit";
+import { WalletIdentity } from "@/components/WalletConnect";
 import { Complaints, Datum, Field, Section, Waiting } from "@/components/ui";
 import { call } from "@/lib/episode";
 import { gen, moment, shortAddress, span } from "@/lib/format";
@@ -323,6 +324,7 @@ function AmountAction({
           </p>
         )}
       </div>
+      <WalletIdentity />
       <Submit
         title={`${heading}: ${parsed ?? 0} wei.`}
         tx={built?.tx ?? null}
@@ -671,6 +673,7 @@ function OpenProgramme({
       </div>
 
       <Complaints found={found} />
+      <WalletIdentity />
 
       <Submit
         title={

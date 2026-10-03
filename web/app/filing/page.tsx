@@ -7,10 +7,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { Submit } from "@/components/Submit";
+import { WalletIdentity } from "@/components/WalletConnect";
 import { Complaints, Datum, Field, Outcome, Section, Waiting } from "@/components/ui";
 import { call } from "@/lib/episode";
 import { gen, until } from "@/lib/format";
 import { useList, useRead } from "@/lib/hooks";
+import { useWallet } from "@/lib/wallet";
 import type { Filing, Programme, Version } from "@/lib/types";
 import { CAUSE_UNSTATED, checkLodge, type LodgeFields } from "@/lib/validation";
 
@@ -52,7 +54,7 @@ function Filings() {
         {programmes.error && (
           <p className="text-sm text-refused">{programmes.error}</p>
         )}
-        {!programmes.busy && programmes.rows.length === 0 && (
+        {!programmes.busy && !programmes.error && programmes.rows.length === 0 && (
           <p className="measure text-sm text-bone-dim">
             There is nothing to file under yet.{" "}
             <Link href="/programmes" className="link">
@@ -150,14 +152,14 @@ function Lodge({
   programme: Programme;
   onDone: () => void;
 }) {
+  const { address } = useWallet();
   const version = useRead<Version>("programme_version", [
     Number(programme.programme),
     Number(programme.current_version),
   ]);
-  const [who, setWho] = useState("");
   const live = useRead<string>(
-    who ? "live_filings" : null,
-    who ? [Number(programme.programme), who] : [],
+    address ? "live_filings" : null,
+    address ? [Number(programme.programme), address] : [],
   );
 
   const [fields, setFields] = useState({
@@ -192,7 +194,8 @@ function Lodge({
     [checked, version.value],
   );
   const complaint = (field: string) => found.find((c) => c.field === field);
-  const ready = version.value !== null && found.length === 0;
+  const ready = version.value !== null && address !== null &&
+    live.value !== null && !live.busy && !live.error && found.length === 0;
 
   function set(key: keyof typeof fields, value: string) {
     setFields((held) => ({ ...held, [key]: value }));
@@ -291,19 +294,10 @@ function Lodge({
           />
         </Field>
 
-        <Field
-          label="your address, optional"
-          hint="so the three-filing cap can be checked before you send"
-        >
-          <input
-            className="field tabular"
-            placeholder="0x…"
-            value={who}
-            onChange={(event) => setWho(event.target.value.trim())}
-          />
-        </Field>
       </div>
 
+      <WalletIdentity />
+      {live.error && <p className="mt-3 text-sm text-refused">{live.error}</p>}
       <Complaints found={found} />
 
       <Submit
@@ -322,7 +316,10 @@ function Lodge({
             : null
         }
         value={BigInt(version.value.stake || "0")}
-        blocked={ready ? undefined : "Settle the complaints above first."}
+        blocked={ready ? undefined : !address ? "Connect the signing wallet first."
+          : live.error ? "The filing count could not be checked."
+          : live.busy || live.value === null ? "Checking this wallet's live filing count."
+          : "Settle the complaints above first."}
         onDone={onDone}
       />
     </div>

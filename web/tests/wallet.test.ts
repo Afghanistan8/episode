@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
 
-import { selectNetwork, type InjectedProvider } from "../lib/wallet";
+import { selectNetwork, WalletPickerView, type InjectedProvider } from "../lib/wallet";
 
 describe("Studionet wallet network", () => {
   it("does not prompt when the wallet is already on the configured chain", async () => {
@@ -33,5 +35,23 @@ describe("Studionet wallet network", () => {
       })],
     });
     expect(current).toBe("0xf22f");
+  });
+});
+
+describe("wallet picker without an injected provider", () => {
+  it("ends discovery with a useful empty state and setup link", () => {
+    const html = renderToStaticMarkup(createElement(WalletPickerView, {
+      options: [],
+      discovering: false,
+      connecting: false,
+      error: "",
+      onClose: () => {},
+      onRescan: () => {},
+      onConnect: async () => {},
+    }));
+    expect(html).toContain("No browser wallet was found.");
+    expect(html).toContain("Get a compatible wallet");
+    expect(html).toContain("https://metamask.io/download");
+    expect(html).not.toContain("Searching for browser wallets");
   });
 });

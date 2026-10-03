@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { describeRefusal, read } from "@/lib/episode";
+import { read, readDiagnostic, refusalCode } from "@/lib/episode";
 import type { Receipt } from "@/lib/types";
 import { Outcome } from "@/components/ui";
 
@@ -28,10 +28,15 @@ export function Lookup() {
     setBusy(true);
     setTrouble("");
     try {
-      setFound(await read<Receipt>("receipt", [Number(id)]));
+      const receipt = await read<Receipt>("receipt", [Number(id)]);
+      if (!receipt) throw new Error(`episode/filing-unknown: no filing ${id}`);
+      setFound(receipt);
     } catch (error) {
       setFound(null);
-      setTrouble(describeRefusal(error));
+      setTrouble(
+        (refusalCode(error) === "episode/filing-unknown" ? "There is no such receipt. " : "") +
+        readDiagnostic(error),
+      );
     } finally {
       setBusy(false);
     }

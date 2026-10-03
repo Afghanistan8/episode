@@ -49,10 +49,13 @@ export default function FilingPage() {
 
   if (filing.busy) return <Waiting what="reading the file" />;
   if (!filing.value) {
+    const missing = !filing.error || filing.error.startsWith("episode/filing-unknown");
     return (
       <div className="mx-auto w-full max-w-6xl px-4 pt-16 sm:px-6">
         <p className="marginal">filing {params.id}</p>
-        <h1 className="display mt-4 text-3xl">That file is not here.</h1>
+        <h1 className="display mt-4 text-3xl">
+          {missing ? "That file is not here." : "The file could not be read."}
+        </h1>
         <Refusal>{filing.error}</Refusal>
         <Link href="/filing" className="press mt-6 inline-block">
           back to the filings

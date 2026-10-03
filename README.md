@@ -246,6 +246,10 @@ picker discovers installed browser wallets, checks the configured chain and
 passes the chosen provider to the write client. Wallet writes show the method,
 value and transaction ID, then wait for a successful consensus and execution
 result. The preview chains and fixture mode keep their transaction kit path.
+The lodge form checks the connected account's live filing count, and payable
+calls are blocked before signing unless they attach a positive value. Contract
+reads stop waiting after 12 seconds and show the RPC, chain and address on
+failure.
 
 For working on the pages without a deployment, `NEXT_PUBLIC_EPISODE_FIXTURES=1`
 answers the same views from a file held in memory and puts a banner across
@@ -263,6 +267,9 @@ NEXT_PUBLIC_EPISODE_RPC=https://studio.genlayer.com/api
 NEXT_PUBLIC_EPISODE_CONTRACT=0x9e6985b530A0c422E876C773b2d8b4e58E20b4f5
 NEXT_PUBLIC_EPISODE_FIXTURES=0
 ```
+
+The production build fails if Vercel overrides any of these values with a
+different chain, RPC, contract, or fixture setting.
 
 Do not put `EPISODE_PRIVATE_KEY` in Vercel: the browser app does not need it.
 
