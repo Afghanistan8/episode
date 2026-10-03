@@ -46,7 +46,7 @@ export default function Home() {
         <div className="home-hero-copy">
           <p className="marginal home-eyebrow">Evidence-led findings / GenLayer</p>
           <h1 className="display home-title">
-            Episode — a receipt for a loss you can see.
+            Episode. A receipt for a loss you can see.
           </h1>
           <p className="home-intro">
             Sponsors lock a programme. Claimants file the scene. Validators

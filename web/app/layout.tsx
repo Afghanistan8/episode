@@ -6,7 +6,7 @@ import { WalletSession } from "@/lib/wallet";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Episode — a receipt for a loss you can see.",
+  title: "Episode. A receipt for a loss you can see.",
   description:
     "Sponsors lock a programme. Claimants file the scene. Validators rate " +
     "what is in the frames. One rule seals the finding.",
