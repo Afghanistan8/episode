@@ -17,7 +17,6 @@ import {
   DEFAULT_FEES_DISTRIBUTION,
   createAccount,
   createClient,
-  generatePrivateKey,
   isSuccessful,
 } from "genlayer-js";
 
@@ -31,14 +30,13 @@ export async function contractSource() {
   return readFile(CONTRACT_PATH, "utf8");
 }
 
-/** The signer. A generated key is printed, because an unprinted key is lost. */
+/** The signer must be supplied by the deployer for this session. */
 export function account() {
   const given = process.env.EPISODE_PRIVATE_KEY;
-  if (given) return createAccount(given.startsWith("0x") ? given : `0x${given}`);
-  const made = generatePrivateKey();
-  console.log(`! no EPISODE_PRIVATE_KEY set, using a fresh key: ${made}`);
-  console.log("! fund it in Studio, or set EPISODE_PRIVATE_KEY to one you own.");
-  return createAccount(made);
+  if (!given || !/^0x[0-9a-fA-F]{64}$/.test(given)) {
+    throw new Error("EPISODE_PRIVATE_KEY must be a 0x-prefixed 32-byte hex key in the process environment");
+  }
+  return createAccount(given);
 }
 
 export async function connect() {
@@ -67,18 +65,30 @@ export async function connect() {
  * a script that conflates them reports a refused call as a successful one.
  */
 export async function settle(client, hash, label) {
-  const transaction = await client.waitForFinalization({ hash });
-  const consensus = transaction.statusName ?? "unknown";
-  const execution = transaction.txExecutionResultName ?? "unknown";
+  const transaction = await client.waitForFinalization({ hash, fullTransaction: true });
+  const status = transaction.statusName ?? transaction.status_name ?? "unknown";
+  const consensus = transaction.resultName ?? transaction.result_name ?? "unknown";
+  const receipts = transaction.consensus_data?.leader_receipt;
+  const leader = Array.isArray(receipts) ? receipts[0] : receipts;
+  const execution = transaction.txExecutionResultName ?? leader?.execution_result ?? "unknown";
 
-  if (!isSuccessful(transaction)) {
+  // The current Studio RPC returns a legacy receipt without
+  // txExecutionResultName. Its leader receipt reports SUCCESS and a return
+  // status when execution finished normally; consensus must also agree.
+  const studioSuccess =
+    status === "FINALIZED" &&
+    consensus === "MAJORITY_AGREE" &&
+    leader?.execution_result === "SUCCESS" &&
+    leader?.result?.status === "return";
+
+  if (!isSuccessful(transaction) && !studioSuccess) {
     const refusal = refusalIn(transaction);
     throw new Error(
-      `${label} did not succeed: ${consensus} / ${execution}` +
+      `${label} ${hash} did not succeed: ${status} / ${consensus} / ${execution}` +
         (refusal ? `\n    ${refusal}` : ""),
     );
   }
-  console.log(`  ${label}: ${consensus} / ${execution}`);
+  console.log(`  ${label}: ${status} / ${consensus} / ${execution}`);
   return transaction;
 }
 
@@ -87,7 +97,9 @@ export async function settle(client, hash, label) {
  * out of a receipt so a failed call says why rather than just that it failed.
  */
 export function refusalIn(transaction) {
-  const text = JSON.stringify(transaction ?? {});
+  const text = JSON.stringify(transaction ?? {}, (_, value) =>
+    typeof value === "bigint" ? value.toString() : value,
+  );
   const found = text.match(/episode\\?\/[a-z-]+:(?:\\.|[^"\\])*/);
   return found ? found[0].replace(/\\"/g, '"').replace(/\\\//g, "/").trim() : "";
 }

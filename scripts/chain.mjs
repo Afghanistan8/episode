@@ -107,9 +107,8 @@ export async function reachable(target, timeoutMs = 8000) {
 }
 
 /**
- * The endpoint to work against. An explicit EPISODE_RPC is taken as given and
- * never second-guessed; otherwise the asked-for target is probed and the
- * others are tried before giving up, so one being down is not fatal.
+ * The endpoint to work against. Never silently switch chains when the
+ * requested network is down: the same signing key may not be used there.
  */
 export async function resolveTarget() {
   const override = fromEnv();
@@ -117,15 +116,8 @@ export async function resolveTarget() {
 
   const first = asked();
   if (await reachable(first)) return { target: first, fellBack: false };
-
-  for (const other of TARGETS) {
-    if (other.key === first.key) continue;
-    if (await reachable(other)) {
-      return { target: other, fellBack: true, insteadOf: first };
-    }
-  }
   throw new Error(
-    `no endpoint answered. Tried ${TARGETS.map((t) => `${t.name} (${t.rpc})`).join(", ")}. ` +
-      `Set EPISODE_RPC to one you can reach.`,
+    `${first.name} did not answer at ${first.rpc} (chain ${first.id}). ` +
+      `Check the endpoint or set EPISODE_RPC explicitly for this chain.`,
   );
 }

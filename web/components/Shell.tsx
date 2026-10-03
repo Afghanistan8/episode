@@ -4,12 +4,7 @@ import { CONTRACT_ADDRESS, CONTRACT_SET, NETWORK_NAME, USING_FIXTURES } from "@/
 import { shortAddress } from "@/lib/format";
 
 import { Mark } from "./Mark";
-
-const NAV = [
-  { href: "/", label: "Episode" },
-  { href: "/programmes", label: "Programmes" },
-  { href: "/filing", label: "Filings" },
-];
+import { NavLinks } from "./NavLinks";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -22,46 +17,53 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <header className="border-b border-rule">
+      <header className="site-header">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
-            <Link href="/" className="flex items-center gap-2.5 text-bone">
-              <span className="text-seal">
+          <div className="site-header-inner">
+            <Link href="/" className="site-brand" aria-label="Episode home">
+              <span className="site-brand-mark">
                 <Mark />
               </span>
-              <span className="display text-[1.3rem]">Episode</span>
+              <span className="site-brand-name">Episode</span>
+              <span className="site-brand-caption">Evidence in view</span>
             </Link>
 
-            <nav className="flex items-center gap-5">
-              {NAV.slice(1).map((item) => (
-                <Link key={item.href} href={item.href} className="marginal hover:text-seal">
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
+            <NavLinks />
 
-            <div className="ml-auto flex items-center gap-4">
-              <span className="marginal">{NETWORK_NAME}</span>
-              <span className="tabular text-bone-ghost" title={CONTRACT_ADDRESS}>
-                {CONTRACT_SET ? shortAddress(CONTRACT_ADDRESS) : "not deployed"}
+            <div className="site-status" title={CONTRACT_ADDRESS}>
+              <span className={`site-status-dot${CONTRACT_SET ? " is-live" : ""}`} />
+              <span className="site-status-network">{NETWORK_NAME}</span>
+              <span className="site-status-detail">
+                {CONTRACT_SET ? shortAddress(CONTRACT_ADDRESS) : "Contract pending"}
               </span>
             </div>
           </div>
         </div>
       </header>
 
+      {!USING_FIXTURES && !CONTRACT_SET && (
+        <div className="deployment-note" role="status">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            Episode is in preview. Live programme and filing actions will be available after the Studionet contract is deployed.
+          </div>
+        </div>
+      )}
+
       <main className="flex-1">{children}</main>
 
-      <footer className="mt-20 border-t border-rule">
-        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
-          <p className="measure text-sm text-bone-faint">
-            Did it happen? The file decides, and no single party reads it.
-          </p>
-          <p className="marginal mt-4">
-            Only events that have to be seen. A rating stands on a photograph the
-            validators actually saw, or on an independent assessor&rsquo;s
-            observation — never on paperwork alone.
-          </p>
+      <footer className="site-footer">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-9 sm:px-6 md:grid-cols-[1fr_auto]">
+          <div>
+            <p className="site-footer-title">Episode</p>
+            <p className="mt-2 max-w-xl text-sm text-bone-faint">
+              Did it happen? The file decides, and no single party reads it.
+            </p>
+          </div>
+          <div className="site-footer-links">
+            <Link href="/programmes">Programmes</Link>
+            <Link href="/filing">Filings</Link>
+            <span>{NETWORK_NAME}</span>
+          </div>
         </div>
       </footer>
     </div>

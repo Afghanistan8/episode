@@ -8,4 +8,3 @@ dist/
 coverage/
 .env
 .env.local
-.episode-deploy.json

@@ -165,9 +165,9 @@ network rejects:
 | `localnet` | 61127 | `http://127.0.0.1:4000/api` |
 
 Note that `61997` is **Devnet, on its own host** — it is not a second chain id
-for Studio. Anything else goes through `EPISODE_RPC` and `EPISODE_CHAIN_ID`,
-taken as given. The scripts probe the one you asked for and fall back to
-another rather than hard-failing if it is down.
+for Studio. An `EPISODE_RPC` override must use a chain ID defined by the SDK.
+The scripts stop if the requested endpoint is down; they never switch chains
+with the same signing key.
 
 Whether a deployment prices a write varies, so `scripts/client.mjs` asks
 rather than assumes: it estimates the fee policy for the concrete call and
@@ -192,10 +192,10 @@ two different questions.
 ```bash
 npm install
 
-export EPISODE_PRIVATE_KEY=0x...          # a funded key; one is generated if unset
+export EPISODE_PRIVATE_KEY=0x...          # required funded Studio key; process environment only
 npm run deploy                            # writes .episode-deploy.json
 npm run schema                            # reads the schema back off the chain
-npm run seed                              # three demo programmes and a file
+EPISODE_SEED_FILING=0 npm run seed        # three demo programmes, no filing
 ```
 
 Switches:
@@ -239,6 +239,25 @@ For working on the pages without a deployment, `NEXT_PUBLIC_EPISODE_FIXTURES=1`
 answers the same views from a file held in memory and puts a banner across
 every page. It is off in the default path and it decides nothing.
 
+### Manual Vercel deployment
+
+Import this repository in Vercel and set the **Root Directory** to `web`.
+The build command is `npm run build`. Set these environment variables for the
+production deployment:
+
+```text
+NEXT_PUBLIC_EPISODE_CHAIN_ID=61999
+NEXT_PUBLIC_EPISODE_RPC=https://studio.genlayer.com/api
+NEXT_PUBLIC_EPISODE_CONTRACT=<successfully deployed Studionet address>
+NEXT_PUBLIC_EPISODE_FIXTURES=0
+```
+
+The most recent Studionet deployment attempt finalized as `NO_MAJORITY`, so
+there is currently no live Episode contract address to enter. The site can be
+deployed now as a preview; its live programme and filing actions will become
+available only after a successful deployment, schema readback, and seeding.
+Do not put `EPISODE_PRIVATE_KEY` in Vercel: the browser app does not need it.
+
 Pages: the four categories and a live receipt lookup; programmes with their
 reserve, committed and idle; the filing, with preflight complaints inline and
 every move it can take; and a shareable receipt that states the version which
@@ -260,7 +279,7 @@ tests/                   pytest, driving the contract through a runtime double
   helpers.py             accounts, a clock, image fixtures, a scripted panel
 
 scripts/
-  chain.mjs              Studio and Studio Next, with a liveness probe
+  chain.mjs              SDK chain targets, with a liveness probe
   deploy.mjs             deploy and record the address
   schema.mjs             read the schema back and check the public surface
   seed.mjs               three demo programmes and a panel-ready file
@@ -276,10 +295,14 @@ docs/rules.md            the specification. Every rule id lives here.
 docs/money.md            the arithmetic, with a worked example that is a test
 ```
 
-The contract's runner pin is the first line of `contracts/episode.py`:
+The contract's runner pin is in the leading `Seq` header of `contracts/episode.py`:
 
 ```python
-# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+# {
+#   "Seq": [
+#     { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
+#   ]
+# }
 ```
 
 ---

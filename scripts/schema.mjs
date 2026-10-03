@@ -4,7 +4,7 @@
 // contract compiled, that its public surface is what you meant to ship, and
 // that the address in .episode-deploy.json is the one carrying it.
 
-import { connect, contractSource, readRecord, short } from "./client.mjs";
+import { connect, contractSource, readRecord } from "./client.mjs";
 
 const EXPECTED = [
   "open_programme",
@@ -26,6 +26,8 @@ const EXPECTED = [
   "withdraw",
   "receipt",
   "panel_preflight",
+  "programme_count",
+  "filing_count",
   "programme",
   "programme_version",
   "filing",
@@ -54,37 +56,25 @@ async function main() {
   const fromSource = methodNames(local);
   console.log(`- source declares ${fromSource.length} entry points`);
 
-  let fromChain = null;
-  try {
-    const record = await readRecord();
-    console.log(`- reading ${record.address} (${record.source})`);
-    fromChain = methodNames(await client.getContractSchema(record.address));
-    console.log(`- deployed contract declares ${fromChain.length} entry points`);
-  } catch (error) {
-    console.log(`! no deployed schema to compare: ${short(error)}`);
-  }
+  const record = await readRecord();
+  console.log(`- reading ${record.address} (${record.source})`);
+  const fromChain = methodNames(await client.getContractSchema(record.address));
+  console.log(`- deployed contract declares ${fromChain.length} entry points`);
 
-  const names = fromChain ?? fromSource;
-  const missing = EXPECTED.filter((name) => !names.includes(name));
-  const ok = missing.length === 0;
+  const missing = EXPECTED.filter((name) => !fromChain.includes(name));
+  const absentFromChain = fromSource.filter((name) => !fromChain.includes(name));
+  const absentFromSource = fromChain.filter((name) => !fromSource.includes(name));
 
   console.log("");
-  for (const name of names) console.log(`  ${name}`);
+  for (const name of fromChain) console.log(`  ${name}`);
   console.log("");
 
-  if (!ok) {
-    console.error(`missing entry points: ${missing.join(", ")}`);
+  if (missing.length || absentFromChain.length || absentFromSource.length) {
+    if (missing.length) console.error(`missing expected entry points: ${missing.join(", ")}`);
+    if (absentFromChain.length) console.error(`source-only entry points: ${absentFromChain.join(", ")}`);
+    if (absentFromSource.length) console.error(`chain-only entry points: ${absentFromSource.join(", ")}`);
     process.exitCode = 1;
     return;
-  }
-  if (fromChain) {
-    const drift = fromSource.filter((name) => !fromChain.includes(name));
-    if (drift.length) {
-      console.log(
-        `! the source on disk has entry points the deployed contract does not: ` +
-          `${drift.join(", ")} -- redeploy before trusting the address`,
-      );
-    }
   }
   console.log("schema read back; every expected entry point is present.");
 }

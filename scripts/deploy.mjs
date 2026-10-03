@@ -10,20 +10,20 @@ async function main() {
   const { client, target, account } = await connect();
   const code = await contractSource();
 
-  const pin = code.split("\n", 1)[0];
-  if (!pin.includes("py-genlayer:")) {
+  const pin = code.match(/^#\s*\{\s*"Depends"\s*:\s*"py-genlayer:([^"]+)"\s*\}/m);
+  if (!pin) {
     throw new Error(
-      "contracts/episode.py must start with its runner pin, e.g. " +
-        '# { "Depends": "py-genlayer:<hash>" }',
+      "contracts/episode.py must start with a Seq runner header containing " +
+        'a { "Depends": "py-genlayer:<hash>" } entry',
     );
   }
-  if (/py-genlayer:(test|latest)\b/.test(pin)) {
+  if (/^(test|latest)$/.test(pin[1])) {
     throw new Error(
-      `the runner pin is an alias (${pin.trim()}); the networks reject ` +
+      `the runner pin is an alias (${pin[0].trim()}); the networks reject ` +
         "py-genlayer:test and py-genlayer:latest. Pin a concrete runner hash.",
     );
   }
-  console.log(`- runner ${pin.trim()}`);
+  console.log(`- runner ${pin[0].trim()}`);
 
   // The schema for the source on disk, before anything is sent: it costs
   // nothing and it fails on a contract that would not compile.
@@ -59,7 +59,7 @@ async function main() {
     deployer: account.address,
     deployedAt: new Date().toISOString(),
     transaction: hash,
-    runner: pin.trim(),
+    runner: pin[0].trim(),
     explorer: target.explorer
       ? `${target.explorer}/address/${address}`
       : "",
