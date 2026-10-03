@@ -5,33 +5,6 @@ import { Lookup } from "@/components/Lookup";
 import { LiveMarketLink } from "@/components/LiveMarketLink";
 import { CATEGORIES } from "@/lib/validation";
 
-const STEPS = [
-  {
-    number: "01",
-    title: "Define the event",
-    detail:
-      "A sponsor opens a programme with a visible event, a fixed award, a reserve, and the conditions a filing must meet.",
-  },
-  {
-    number: "02",
-    title: "Build the file",
-    detail:
-      "A claimant binds that version, posts the bond, and adds scene photographs and any required documents.",
-  },
-  {
-    number: "03",
-    title: "Read the scene",
-    detail:
-      "Code checks the file first. Validators see the photographs, then rate the requirements on what they saw.",
-  },
-  {
-    number: "04",
-    title: "Keep the finding",
-    detail:
-      "A fixed rule turns the ratings into an outcome. The receipt keeps the version, grounds, and round together.",
-  },
-];
-
 const AUDIENCE = [
   ["Events & venues", "A floor that cannot host the booking it was taken for."],
   ["Ports & logistics", "An idle berth, shifted cargo, or blocked route in view."],
@@ -127,30 +100,6 @@ export default function Home() {
             </Link>
           ))}
         </div>
-      </section>
-
-      <section className="home-section" aria-labelledby="flow-heading">
-        <div className="home-section-head">
-          <div>
-            <p className="marginal">Process / 02</p>
-            <h2 id="flow-heading" className="display home-section-title">
-              From event to receipt.
-            </h2>
-          </div>
-          <p>
-            Missing evidence is named before a panel is called. The same
-            ratings always seal the same finding.
-          </p>
-        </div>
-        <ol className="home-step-grid">
-          {STEPS.map((step) => (
-            <li key={step.number} className="home-step">
-              <span className="home-step-number">{step.number}</span>
-              <h3>{step.title}</h3>
-              <p>{step.detail}</p>
-            </li>
-          ))}
-        </ol>
       </section>
 
       <section className="home-section home-evidence" aria-labelledby="evidence-heading">

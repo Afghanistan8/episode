@@ -2,7 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 
-import { selectNetwork, WalletPickerView, type InjectedProvider } from "../lib/wallet";
+import { WalletConnect } from "../components/WalletConnect";
+import { selectNetwork, WalletPickerView, WalletSession, type InjectedProvider } from "../lib/wallet";
+
+describe("server-rendered wallet control", () => {
+  it("renders connect before provider discovery or hydration", () => {
+    const html = renderToStaticMarkup(
+      createElement(WalletSession, null, createElement(WalletConnect)),
+    );
+    expect(html).toContain(">connect</button>");
+    expect(html).not.toContain("hidden");
+  });
+});
 
 describe("Studionet wallet network", () => {
   it("does not prompt when the wallet is already on the configured chain", async () => {

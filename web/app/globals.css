@@ -374,12 +374,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  min-height: 2.25rem;
-  padding: 0.35rem 0.75rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.15rem;
   font: 0.65rem var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   white-space: nowrap;
+}
+
+.wallet-trigger:not(.wallet-trigger-connected) {
+  border-color: transparent;
+  background: transparent;
 }
 
 .wallet-trigger:hover,

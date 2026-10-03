@@ -40,7 +40,7 @@ function Filings() {
       <section className="pt-14">
         <p className="marginal">filings</p>
         <h1 className="display mt-4 text-[2.2rem] sm:text-[3rem]">
-          Lodge the event, attach what was seen, ask for a panel.
+          Lodge under a programme, attach the frames, ask for a panel.
         </h1>
         <p className="lede measure mt-6">
           The bond is posted with the filing and the benefit is committed out of
