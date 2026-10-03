@@ -1,9 +1,8 @@
 // A client, an account, the fee flow, and the deployment record.
 //
-// Studio charges fees, so a write is a two-step: estimate the policy for the
-// concrete call, then submit that estimate's `distribution` and `feeValue`
-// alongside it. Submitting without them is how a write fails on a
-// fee-charging deployment while looking fine in the code.
+// The stable Studionet SDK uses the five-argument addTransaction selector and
+// does not expose the preview fee estimator. The v2 preview SDK estimates the
+// policy for each write and submits its distribution and fee value.
 //
 // Settlement is `waitForFinalization` plus `isSuccessful`: a transaction can
 // finalize by consensus and still have reverted in execution, and those are
@@ -15,10 +14,14 @@ import { fileURLToPath } from "node:url";
 
 import {
   DEFAULT_FEES_DISTRIBUTION,
-  createAccount,
-  createClient,
+  createAccount as createPreviewAccount,
+  createClient as createPreviewClient,
   isSuccessful,
 } from "genlayer-js";
+import {
+  createAccount as createStableAccount,
+  createClient as createStableClient,
+} from "genlayer-js-stable";
 
 import { resolveTarget } from "./chain.mjs";
 
@@ -31,12 +34,12 @@ export async function contractSource() {
 }
 
 /** The signer must be supplied by the deployer for this session. */
-export function account() {
+export function account(stable = true) {
   const given = process.env.EPISODE_PRIVATE_KEY;
   if (!given || !/^0x[0-9a-fA-F]{64}$/.test(given)) {
     throw new Error("EPISODE_PRIVATE_KEY must be a 0x-prefixed 32-byte hex key in the process environment");
   }
-  return createAccount(given);
+  return stable ? createStableAccount(given) : createPreviewAccount(given);
 }
 
 export async function connect() {
@@ -44,11 +47,12 @@ export async function connect() {
   if (fellBack) {
     console.log(`! ${insteadOf.name} did not answer; using ${target.name}`);
   }
-  const signer = account();
+  const stable = target.id === 61999;
+  const signer = account(stable);
   // `endpoint` as well as the chain's own rpcUrls: the SDK ships a URL per
   // named chain, and if that ever diverges from the one being advertised the
   // client would quietly read and write against a different node.
-  const client = createClient({
+  const client = (stable ? createStableClient : createPreviewClient)({
     chain: target.chain,
     endpoint: target.rpc,
     account: signer,
@@ -65,7 +69,9 @@ export async function connect() {
  * a script that conflates them reports a refused call as a successful one.
  */
 export async function settle(client, hash, label) {
-  const transaction = await client.waitForFinalization({ hash, fullTransaction: true });
+  const transaction = client.waitForFinalization
+    ? await client.waitForFinalization({ hash, fullTransaction: true, retries: 120 })
+    : await client.waitForTransactionReceipt({ hash, status: "FINALIZED", fullTransaction: true, retries: 120 });
   const status = transaction.statusName ?? transaction.status_name ?? "unknown";
   const consensus = transaction.resultName ?? transaction.result_name ?? "unknown";
   const receipts = transaction.consensus_data?.leader_receipt;
@@ -112,6 +118,12 @@ export function refusalIn(transaction) {
  * and loudly on a call the contract would refuse -- before anything is sent.
  */
 export async function write(client, call, label) {
+  if (!client.estimateTransactionFeesForWrite) {
+    const hash = await client.writeContract(call);
+    console.log(`  ${label}: ${hash}`);
+    return settle(client, hash, label);
+  }
+
   let fees;
   try {
     const estimate = await client.estimateTransactionFeesForWrite(call);
@@ -137,12 +149,14 @@ export async function write(client, call, label) {
   return settle(client, hash, label);
 }
 
-/** Deploy has no estimator of its own, so it carries the default distribution. */
+/** Use the stable Studionet deploy format, or the preview fee distribution. */
 export async function deploy(client, code, args = []) {
   const hash = await client.deployContract({
     code,
     args,
-    fees: { distribution: DEFAULT_FEES_DISTRIBUTION },
+    ...(client.waitForFinalization
+      ? { fees: { distribution: DEFAULT_FEES_DISTRIBUTION } }
+      : {}),
   });
   console.log(`- deploy transaction ${hash}`);
   return { hash, transaction: await settle(client, hash, "deploy") };

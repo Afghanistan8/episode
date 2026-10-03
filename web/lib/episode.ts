@@ -9,6 +9,8 @@
 // pages. It is off by default and the banner says so when it is on.
 
 import { createClient } from "genlayer-js";
+import { createClient as createStableClient } from "genlayer-js-stable";
+import { studionet as stableStudionet } from "genlayer-js-stable/chains";
 import type { CalldataEncodable, GenLayerClient, GenLayerChain } from "genlayer-js/types";
 import {
   createTransactionKit,
@@ -18,7 +20,7 @@ import {
 } from "@genlayer/transaction-kit";
 import { createMockKit } from "@genlayer/transaction-kit-react";
 
-import { CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, chain } from "./chain";
+import { CHAIN_ID, CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, chain } from "./chain";
 import { fixtureRead } from "./fixtures";
 
 /** Calldata comes back with Maps in it. Flatten to plain data once, here. */
@@ -40,6 +42,7 @@ export function plain(value: unknown): unknown {
 }
 
 let reader: GenLayerClient<GenLayerChain> | null = null;
+let stableReader: ReturnType<typeof createStableClient> | null = null;
 
 function client(): GenLayerClient<GenLayerChain> {
   // `endpoint` as well as the chain's own rpcUrls, so the client cannot end
@@ -67,6 +70,18 @@ export async function read<T>(
 ): Promise<T> {
   if (USING_FIXTURES) return fixtureRead<T>(functionName, args);
   if (!CONTRACT_SET) throw new NotDeployed();
+  if (CHAIN_ID === stableStudionet.id) {
+    stableReader ??= createStableClient({
+      chain: stableStudionet,
+      endpoint: RPC_URL,
+    });
+    const answer = await stableReader.readContract({
+      address: CONTRACT_ADDRESS,
+      functionName,
+      args,
+    });
+    return plain(answer) as T;
+  }
   const answer = await client().readContract({
     address: CONTRACT_ADDRESS,
     functionName,

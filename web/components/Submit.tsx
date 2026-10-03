@@ -12,8 +12,9 @@ import type { SubmitInput, TrackedStatus } from "@genlayer/transaction-kit";
 import { GenLayerTransactionPanel } from "@genlayer/transaction-kit-react";
 import "@genlayer/transaction-kit-react/styles.css";
 
-import { CONTRACT_SET, NETWORK_NAME, USING_FIXTURES } from "@/lib/chain";
+import { CHAIN_ID, CONTRACT_SET, NETWORK_NAME, USING_FIXTURES } from "@/lib/chain";
 import { browserProvider, transactionKit } from "@/lib/episode";
+import { StableSubmit } from "./StableSubmit";
 
 export type SubmitProps = {
   /** What is about to happen, in the user's words, not the method's. */
@@ -32,7 +33,12 @@ export type SubmitProps = {
   inline?: boolean;
 };
 
-export function Submit({
+export function Submit(props: SubmitProps) {
+  if (!USING_FIXTURES && CHAIN_ID === 61999) return <StableSubmit {...props} />;
+  return <PreviewSubmit {...props} />;
+}
+
+function PreviewSubmit({
   title,
   tx,
   value = 0n,

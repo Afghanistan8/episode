@@ -2,8 +2,8 @@
 //
 // The targets are the SDK's own chain definitions rather than hand-written
 // ones, because the chain id is signed over and a pair invented here that the
-// network does not use produces signatures it will not accept. What the SDK
-// defines, as of genlayer-js 2.0.0-rc.1:
+// network does not use produces signatures it will not accept. Stable
+// Studionet uses genlayer-js 1.1.8; the Studio-dev preview uses the 2.0 RC:
 //
 //   studionet     61999  https://studio.genlayer.com/api
 //   studioDevnet  61997  https://studio-dev.genlayer.com/api
@@ -12,7 +12,8 @@
 // Note that 61997 is Devnet on its own host -- it is not Studio's chain id.
 // Anything else goes through EPISODE_RPC, which is taken as given.
 
-import { localnet, studioDevnet, studionet } from "genlayer-js/chains";
+import { localnet, studioDevnet } from "genlayer-js/chains";
+import { studionet } from "genlayer-js-stable/chains";
 
 function target(key, chain, note, explorer = "") {
   return {

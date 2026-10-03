@@ -107,6 +107,37 @@ async function programmeId(client, address, account) {
   return Number(count) - 1;
 }
 
+async function verifyProgramme(client, address, account, id, expected) {
+  const held = await client.readContract({
+    account, address, functionName: "programme", args: [id],
+  });
+  const version = await client.readContract({
+    account, address, functionName: "programme_version", args: [id, 1],
+  });
+  const checks = [
+    ["sponsor", String(held.sponsor).toLowerCase(), account.address.toLowerCase()],
+    ["category", String(held.category), String(expected.category)],
+    ["kind", held.kind, expected.kind],
+    ["version", String(held.current_version), "1"],
+    ["reserve", String(held.balance), String(RESERVE)],
+    ["award", String(version.award), String(AWARD)],
+    ["bond", String(version.stake), String(STAKE)],
+    ["definition", version.definition, expected.definition],
+    ["exclusions", version.exclusions, expected.exclusions],
+    ["criteria", JSON.stringify(version.criteria), JSON.stringify(expected.criteria)],
+    ["views", JSON.stringify(version.required_views), JSON.stringify(expected.views)],
+    ["paper requirement", version.paper_required, expected.paperRequired],
+    ["paper kind", version.paper_kind, expected.paperKind],
+    ["minimum frames", String(version.min_frames), String(expected.minFrames)],
+    ["evidence window", String(version.evidence_window), String(expected.evidenceWindow)],
+    ["appeal window", String(version.appeal_window), String(expected.appealWindow)],
+  ];
+  const mismatch = checks.find(([, actual, wanted]) => actual !== wanted);
+  if (mismatch) {
+    throw new Error(`programme ${id} already exists but its ${mismatch[0]} differs from the seed plan`);
+  }
+}
+
 async function main() {
   const { client, account } = await connect();
   const record = await readRecord();
@@ -116,9 +147,22 @@ async function main() {
     `- reserve ${RESERVE} wei per programme, award ${AWARD}, bond ${STAKE}`,
   );
 
+  const existing = Number(await client.readContract({
+    account, address, functionName: "programme_count", args: [],
+  }));
+  if (existing > PROGRAMMES.length) {
+    throw new Error(`contract has ${existing} programmes; refusing to guess where the seed plan ends`);
+  }
+
   const opened = [];
-  for (const programme of PROGRAMMES) {
+  for (const [index, programme] of PROGRAMMES.entries()) {
     console.log(`\n* ${programme.label} (${programme.kind})`);
+    if (index < existing) {
+      await verifyProgramme(client, address, account, index, programme);
+      opened.push({ ...programme, id: index });
+      console.log(`  programme ${index}, version 1 (verified existing)`);
+      continue;
+    }
     await write(
       client,
       {
@@ -146,6 +190,8 @@ async function main() {
       "open_programme",
     );
     const id = await programmeId(client, address, account);
+    if (id !== index) throw new Error(`expected programme ${index}, got ${id}`);
+    await verifyProgramme(client, address, account, id, programme);
     opened.push({ ...programme, id });
     console.log(`  programme ${id}, version 1`);
   }

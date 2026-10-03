@@ -169,12 +169,17 @@ for Studio. An `EPISODE_RPC` override must use a chain ID defined by the SDK.
 The scripts stop if the requested endpoint is down; they never switch chains
 with the same signing key.
 
-Whether a deployment prices a write varies, so `scripts/client.mjs` asks
-rather than assumes: it estimates the fee policy for the concrete call and
-submits that estimate's `distribution` and `feeValue` with the write, and on a
-deployment with no fee API or no fee config it says so and submits without a
-deposit. Writes succeed either way. The estimate also simulates the call, so a
-request the contract would refuse fails before anything is sent.
+Studionet uses the published stable `genlayer-js` 1.1.8 release. Studio-dev
+uses the separate 2.0 release candidate. The preview client sends a different
+`addTransaction` selector: on stable Studionet it produced two finalized
+`NO_MAJORITY` transactions with no assigned validators. The stable client sent
+the selector used by successful Studionet deployments, and Episode finalized
+with `MAJORITY_AGREE / SUCCESS`. The scripts select the SDK by chain ID.
+
+On the preview chain, `scripts/client.mjs` estimates the fee policy for a
+concrete write and submits its `distribution` and `feeValue`. Stable Studionet
+does not expose that preview fee API, so its client uses the stable submission
+format directly.
 
 The chain object handed to the client is the SDK's own definition, used whole.
 That matters beyond the chain id: the definition carries the consensus and fee
@@ -188,6 +193,12 @@ URL by accident.
 Settlement waits for finalization and then checks execution separately — a
 transaction can finalize by consensus and still have reverted, and those are
 two different questions.
+
+The live Studionet deployment is recorded in `.episode-deploy.json` at
+`0x9e6985b530A0c422E876C773b2d8b4e58E20b4f5`. All 31 public methods
+were read back from that address, and three programmes were seeded. The seeder
+verifies existing programmes before resuming, so a wait timeout does not
+duplicate a successful write.
 
 ```bash
 npm install
@@ -219,7 +230,7 @@ exhibit is from its bytes and a placeholder would be filed as paperwork.
 
 ```bash
 cd web
-cp .env.example .env.local      # then put the deployed address in it
+cp .env.example .env.local      # already contains the verified Studionet address
 npm install
 npm run dev
 ```
@@ -227,13 +238,13 @@ npm run dev
 ```
 NEXT_PUBLIC_EPISODE_CHAIN_ID=61999
 NEXT_PUBLIC_EPISODE_RPC=https://studio.genlayer.com/api
-NEXT_PUBLIC_EPISODE_CONTRACT=0x…
+NEXT_PUBLIC_EPISODE_CONTRACT=0x9e6985b530A0c422E876C773b2d8b4e58E20b4f5
 ```
 
-Reads go through `genlayer-js`. Writes go through the GenLayer transaction kit,
-which quotes the fee, shows what is being signed and tracks the round — the app
-never signs anything itself, and needs a GenLayer-capable wallet in the
-browser.
+Reads and wallet writes on Studionet use the stable SDK. Wallet writes show
+the method, value and transaction ID, then wait for a successful consensus and
+execution result. The preview chains and fixture mode keep their transaction
+kit path. The app needs a GenLayer-capable wallet in the browser.
 
 For working on the pages without a deployment, `NEXT_PUBLIC_EPISODE_FIXTURES=1`
 answers the same views from a file held in memory and puts a banner across
@@ -242,20 +253,16 @@ every page. It is off in the default path and it decides nothing.
 ### Manual Vercel deployment
 
 Import this repository in Vercel and set the **Root Directory** to `web`.
-The build command is `npm run build`. Set these environment variables for the
-production deployment:
+The build command is `npm run build`. `web/.env.production` supplies these
+public values; use the same values if you set them in Vercel's dashboard:
 
 ```text
 NEXT_PUBLIC_EPISODE_CHAIN_ID=61999
 NEXT_PUBLIC_EPISODE_RPC=https://studio.genlayer.com/api
-NEXT_PUBLIC_EPISODE_CONTRACT=<successfully deployed Studionet address>
+NEXT_PUBLIC_EPISODE_CONTRACT=0x9e6985b530A0c422E876C773b2d8b4e58E20b4f5
 NEXT_PUBLIC_EPISODE_FIXTURES=0
 ```
 
-The most recent Studionet deployment attempt finalized as `NO_MAJORITY`, so
-there is currently no live Episode contract address to enter. The site can be
-deployed now as a preview; its live programme and filing actions will become
-available only after a successful deployment, schema readback, and seeding.
 Do not put `EPISODE_PRIVATE_KEY` in Vercel: the browser app does not need it.
 
 Pages: the four categories and a live receipt lookup; programmes with their
@@ -295,14 +302,10 @@ docs/rules.md            the specification. Every rule id lives here.
 docs/money.md            the arithmetic, with a worked example that is a test
 ```
 
-The contract's runner pin is in the leading `Seq` header of `contracts/episode.py`:
+The contract's runner pin is on the first line of `contracts/episode.py`:
 
 ```python
-# {
-#   "Seq": [
-#     { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
-#   ]
-# }
+# { "Depends": "py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6" }
 ```
 
 ---

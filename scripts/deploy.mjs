@@ -13,7 +13,7 @@ async function main() {
   const pin = code.match(/^#\s*\{\s*"Depends"\s*:\s*"py-genlayer:([^"]+)"\s*\}/m);
   if (!pin) {
     throw new Error(
-      "contracts/episode.py must start with a Seq runner header containing " +
+      "contracts/episode.py must start with a runner header containing " +
         'a { "Depends": "py-genlayer:<hash>" } entry',
     );
   }
