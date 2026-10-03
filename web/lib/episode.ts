@@ -65,6 +65,28 @@ export class NotDeployed extends Error {
 }
 
 /** One view call. Throws with the contract's own refusal text when it refuses. */
+async function readOnce<T>(functionName: string, args: CalldataEncodable[]): Promise<T> {
+  if (CHAIN_ID === stableStudionet.id) {
+    stableReader ??= createStableClient({
+      chain: stableStudionet,
+      endpoint: RPC_URL,
+    });
+    const answer = await stableReader.readContract({
+      address: CONTRACT_ADDRESS,
+      functionName,
+      args,
+    });
+    return plain(answer) as T;
+  }
+  const answer = await client().readContract({
+    address: CONTRACT_ADDRESS,
+    functionName,
+    args,
+    jsonSafeReturn: true,
+  });
+  return plain(answer) as T;
+}
+
 export async function read<T>(
   functionName: string,
   args: CalldataEncodable[] = [],
@@ -72,25 +94,21 @@ export async function read<T>(
   if (USING_FIXTURES) return fixtureRead<T>(functionName, args);
   if (!CONTRACT_SET) throw new NotDeployed();
   return withReadDeadline(async () => {
-    if (CHAIN_ID === stableStudionet.id) {
-      stableReader ??= createStableClient({
-        chain: stableStudionet,
-        endpoint: RPC_URL,
-      });
-      const answer = await stableReader.readContract({
-        address: CONTRACT_ADDRESS,
-        functionName,
-        args,
-      });
-      return plain(answer) as T;
+    if (functionName === "receipt" || functionName === "filing") {
+      // Studionet currently turns this contract's filing-unknown refusal into
+      // a generic invalid-parameters RPC error. Filing ids are contiguous,
+      // so a count read gives the missing-id answer before asking for it.
+      const id = Number(args[0]);
+      if (!Number.isSafeInteger(id) || id < 0) {
+        throw new Error(`episode/filing-unknown: no filing ${String(args[0])}`);
+      }
+      const count = Number(await readOnce<number | string>("filing_count", []));
+      if (!Number.isSafeInteger(count) || count < 0) {
+        throw new Error("filing_count returned an invalid count.");
+      }
+      if (id >= count) throw new Error(`episode/filing-unknown: no filing ${id}`);
     }
-    const answer = await client().readContract({
-      address: CONTRACT_ADDRESS,
-      functionName,
-      args,
-      jsonSafeReturn: true,
-    });
-    return plain(answer) as T;
+    return readOnce<T>(functionName, args);
   }, functionName);
 }
 
