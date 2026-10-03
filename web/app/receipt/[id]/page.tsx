@@ -194,7 +194,7 @@ function Sheet({ receipt }: { receipt: Receipt }) {
         </div>
 
         <footer className="hairline mt-8 flex flex-wrap items-center justify-between gap-4 pt-7">
-          <p className="measure text-sm text-bone-faint">{receipt.tagline}</p>
+          <p className="measure text-sm text-bone-faint">Programme, exhibits, round, and rule recorded together.</p>
           <div className="flex gap-3">
             <button type="button" className="press" onClick={() => void share()}>
               {copied ? "link copied" : "copy the link"}

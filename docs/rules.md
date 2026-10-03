@@ -1,6 +1,6 @@
 # Episode: the rules
 
-> Did it happen? The file decides, and no single party reads it.
+> Episode applies fixed rules to the evidence recorded on each filing.
 
 This document is the specification. Every rule has an id; `contracts/episode.py`
 points at these ids and does not restate them. Where a comment in the contract

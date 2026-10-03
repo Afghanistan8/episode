@@ -304,8 +304,6 @@ const ROUND = {
   convened_at: String(NOW - 3600),
 };
 
-const TAGLINE = "Did it happen? The file decides, and no single party reads it.";
-
 function receiptFor(id: string): unknown {
   const filing = FILINGS.find((f) => f.filing === id);
   if (!filing) throw new Error(`episode/filing-unknown: no filing ${id}`);
@@ -338,7 +336,6 @@ function receiptFor(id: string): unknown {
               new_on_appeal: held.new_on_appeal,
             };
           }),
-    tagline: TAGLINE,
   };
 }
 
@@ -346,8 +343,6 @@ function receiptFor(id: string): unknown {
 export function fixtureRead<T>(functionName: string, args: CalldataEncodable[]): T {
   const first = String(args[0] ?? "");
   switch (functionName) {
-    case "tagline":
-      return TAGLINE as T;
     case "programme_count":
       return PROGRAMMES.length as T;
     case "filing_count":

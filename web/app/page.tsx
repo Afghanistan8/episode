@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { CategoryGlyph, Mark } from "@/components/Mark";
 import { Lookup } from "@/components/Lookup";
+import { LiveMarketLink } from "@/components/LiveMarketLink";
 import { CATEGORIES } from "@/lib/validation";
 
 const STEPS = [
@@ -45,13 +46,11 @@ export default function Home() {
         <div className="home-hero-copy">
           <p className="marginal home-eyebrow">Evidence-led findings / GenLayer</p>
           <h1 className="display home-title">
-            Did it happen?
-            <span>Show what was seen.</span>
+            Episode — a receipt for a loss you can see.
           </h1>
           <p className="home-intro">
-            Episode gives visible loss and disruption a file that can be read.
-            Independent validators examine the scene; fixed rules turn their
-            ratings into a finding you can trace.
+            Sponsors lock a programme. Claimants file the scene. Validators
+            rate what is in the frames. One rule seals the finding.
           </p>
           <div className="home-actions">
             <Link href="/programmes" className="press press-filled">
@@ -62,8 +61,9 @@ export default function Home() {
             </Link>
           </div>
           <p className="home-hero-footnote">
-            Property · vehicles · cargo · visible business interruption
+            Gala venues, berths, containers, storm parcels, drought stands.
           </p>
+          <LiveMarketLink />
         </div>
 
         <aside className="home-hero-panel" aria-label="Episode evidence standard">
@@ -106,12 +106,12 @@ export default function Home() {
           <div>
             <p className="marginal">Scope / 01</p>
             <h2 id="categories-heading" className="display home-section-title">
-              Only what can be seen.
+              What the programme will pay on.
             </h2>
           </div>
           <p>
-            Four categories. Each programme names the event and the scene the
-            panel must judge.
+            Property, vehicle, cargo, and visible business interruption. Each
+            programme names the event and the scene the panel must judge.
           </p>
         </div>
         <div className="home-category-grid">
@@ -138,8 +138,8 @@ export default function Home() {
             </h2>
           </div>
           <p>
-            Preflight names what is missing before a panel is called. The same
-            ratings always produce the same outcome.
+            Missing evidence is named before a panel is called. The same
+            ratings always seal the same finding.
           </p>
         </div>
         <ol className="home-step-grid">
@@ -157,13 +157,13 @@ export default function Home() {
         <div>
           <p className="marginal">Grounds / 03</p>
           <h2 id="evidence-heading" className="display home-section-title">
-            The scene must carry the claim.
+            Grounds recorded on the file.
           </h2>
           <p className="home-evidence-copy">
-            A rating stands on a photograph a validator actually saw, or on an
-            independent assessor&rsquo;s observation. A sponsor cannot sink a
-            filing on its own photographs alone. A conflict must name the two
-            exhibits in the file.
+            A rating stands on a frame a validator saw, or on an assessor&rsquo;s
+            note. The sponsor&rsquo;s own frames cannot sink a filing by
+            themselves. A clash has to name two exhibits. An appeal has to add
+            something new.
           </p>
         </div>
         <div className="home-evidence-list">
@@ -197,7 +197,7 @@ export default function Home() {
         <div>
           <p className="marginal">Public record</p>
           <h2 id="lookup-heading" className="display home-section-title">Find a receipt.</h2>
-          <p>Look up the version, evidence, round, and rule behind a finding.</p>
+          <p>Look up the programme version, the exhibits, the round, and the rule on the receipt.</p>
         </div>
         <Lookup />
       </section>

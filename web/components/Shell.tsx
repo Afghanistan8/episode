@@ -58,7 +58,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div>
             <p className="site-footer-title">Episode</p>
             <p className="mt-2 max-w-xl text-sm text-bone-faint">
-              Did it happen? The file decides, and no single party reads it.
+              A traceable finding for visible loss and disruption.
             </p>
           </div>
           <div className="site-footer-links">

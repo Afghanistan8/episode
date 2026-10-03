@@ -6,11 +6,10 @@ import { WalletSession } from "@/lib/wallet";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Episode — findings on events that have to be seen",
+  title: "Episode — a receipt for a loss you can see.",
   description:
-    "Did it happen? The file decides, and no single party reads it. Episode " +
-    "settles property, vehicle, cargo and visible-interruption events on " +
-    "photographs a panel of validators actually saw.",
+    "Sponsors lock a programme. Claimants file the scene. Validators rate " +
+    "what is in the frames. One rule seals the finding.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

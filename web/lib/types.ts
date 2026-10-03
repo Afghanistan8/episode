@@ -145,7 +145,6 @@ export type Receipt = {
   terminal: boolean;
   rounds: string;
   exhibits: SnapshotRow[];
-  tagline: string;
 };
 
 export type Observation = {

@@ -1,6 +1,6 @@
 # Episode: the money
 
-> Did it happen? The file decides, and no single party reads it.
+> Episode records visible loss, reserved money, and the resulting finding.
 
 Nothing in Episode is ever pushed. A settlement credits a ledger; the owner
 collects for themselves. The rule ids here are the ones in
