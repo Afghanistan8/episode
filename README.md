@@ -241,10 +241,11 @@ NEXT_PUBLIC_EPISODE_RPC=https://studio.genlayer.com/api
 NEXT_PUBLIC_EPISODE_CONTRACT=0x9e6985b530A0c422E876C773b2d8b4e58E20b4f5
 ```
 
-Reads and wallet writes on Studionet use the stable SDK. Wallet writes show
-the method, value and transaction ID, then wait for a successful consensus and
-execution result. The preview chains and fixture mode keep their transaction
-kit path. The app needs a GenLayer-capable wallet in the browser.
+Reads and wallet writes on Studionet use the stable SDK. The header's wallet
+picker discovers installed browser wallets, checks the configured chain and
+passes the chosen provider to the write client. Wallet writes show the method,
+value and transaction ID, then wait for a successful consensus and execution
+result. The preview chains and fixture mode keep their transaction kit path.
 
 For working on the pages without a deployment, `NEXT_PUBLIC_EPISODE_FIXTURES=1`
 answers the same views from a file held in memory and puts a banner across

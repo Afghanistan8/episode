@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { Shell } from "@/components/Shell";
+import { WalletSession } from "@/lib/wallet";
 
 import "./globals.css";
 
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <Shell>{children}</Shell>
+        <WalletSession><Shell>{children}</Shell></WalletSession>
       </body>
     </html>
   );

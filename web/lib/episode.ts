@@ -1,8 +1,8 @@
 // Reading Episode, and submitting to it.
 //
-// Reads go through genlayer-js against the configured endpoint. Writes go
-// through the GenLayer transaction kit, which quotes the fee, takes the
-// approval and tracks the round -- the app never signs anything itself.
+// Reads go through the SDK for the configured chain. Studionet writes use
+// the stable SDK with the selected browser provider; preview writes use the
+// transaction kit. The browser wallet signs both paths.
 //
 // Fixture mode (NEXT_PUBLIC_EPISODE_FIXTURES=1) swaps the reads for a file
 // held in memory and the kit for the kit's own mock. It is for working on the
@@ -14,7 +14,6 @@ import { studionet as stableStudionet } from "genlayer-js-stable/chains";
 import type { CalldataEncodable, GenLayerClient, GenLayerChain } from "genlayer-js/types";
 import {
   createTransactionKit,
-  type Eip1193Provider,
   type SubmitInput,
   type TransactionKit,
 } from "@genlayer/transaction-kit";
@@ -22,6 +21,7 @@ import { createMockKit } from "@genlayer/transaction-kit-react";
 
 import { CHAIN_ID, CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, chain } from "./chain";
 import { fixtureRead } from "./fixtures";
+import type { InjectedProvider } from "./wallet";
 
 /** Calldata comes back with Maps in it. Flatten to plain data once, here. */
 export function plain(value: unknown): unknown {
@@ -126,15 +126,9 @@ export function call(method: string, args: CalldataEncodable[]): SubmitInput {
   return { kind: "write", address: CONTRACT_ADDRESS, method, args };
 }
 
-export function browserProvider(): Eip1193Provider | null {
-  const held = (globalThis as { ethereum?: Eip1193Provider }).ethereum;
-  return held ?? null;
-}
-
 /** The kit the submit panel drives. In fixture mode, the kit's own mock. */
-export function transactionKit(account?: `0x${string}`): TransactionKit | null {
+export function transactionKit(account?: `0x${string}`, provider?: InjectedProvider | null): TransactionKit | null {
   if (USING_FIXTURES) return createMockKit({ queueAhead: 1 });
-  const provider = browserProvider();
   if (!provider) return null;
   return createTransactionKit({ chain, provider, account });
 }

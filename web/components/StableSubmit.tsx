@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createClient } from "genlayer-js-stable";
 import { studionet } from "genlayer-js-stable/chains";
 import { TransactionStatus } from "genlayer-js-stable/types";
 
 import { CONTRACT_SET, NETWORK_NAME, RPC_URL } from "@/lib/chain";
-import { browserProvider, describeRefusal } from "@/lib/episode";
+import { describeRefusal } from "@/lib/episode";
 import { gen } from "@/lib/format";
+import { useWallet } from "@/lib/wallet";
 
 import type { SubmitProps } from "./Submit";
 
@@ -45,27 +46,27 @@ export function StableSubmit({
   inline = false,
 }: SubmitProps) {
   const [open, setOpen] = useState(false);
-  const [account, setAccount] = useState<`0x${string}` | null>(null);
+  const [waitingForWallet, setWaitingForWallet] = useState(false);
+  const { address: account, provider, openPicker, ensureNetwork } = useWallet();
   const [hash, setHash] = useState<`0x${string}` | null>(null);
   const [working, setWorking] = useState(false);
   const [finished, setFinished] = useState(false);
   const [trouble, setTrouble] = useState("");
   const gap = inline ? "" : "mt-4";
 
-  async function connect() {
-    setTrouble("");
-    const provider = browserProvider();
-    if (!provider) {
-      setTrouble("No GenLayer-capable wallet is available in this browser.");
-      return;
-    }
-    try {
-      const accounts = await provider.request({ method: "eth_requestAccounts" }) as string[];
-      if (!accounts[0]) throw new Error("The wallet returned no account.");
-      setAccount(accounts[0] as `0x${string}`);
+  useEffect(() => {
+    if (waitingForWallet && account) {
       setOpen(true);
-    } catch (error) {
-      setTrouble(describeRefusal(error));
+      setWaitingForWallet(false);
+    }
+  }, [waitingForWallet, account]);
+
+  function showSubmit() {
+    setTrouble("");
+    if (account) setOpen(true);
+    else {
+      setWaitingForWallet(true);
+      openPicker();
     }
   }
 
@@ -101,17 +102,12 @@ export function StableSubmit({
   }
 
   async function submit() {
-    if (hash || !account || !tx || tx.kind !== "write") return;
-    const provider = browserProvider();
-    if (!provider) {
-      setTrouble("The wallet is no longer available.");
-      return;
-    }
+    if (hash || !account || !provider || !tx || tx.kind !== "write") return;
     setWorking(true);
     setTrouble("");
     try {
+      await ensureNetwork();
       const wallet = createClient({ chain: studionet, endpoint: RPC_URL, provider, account });
-      await wallet.connect("studionet");
       const txHash = await wallet.writeContract({
         address: tx.address,
         functionName: tx.method,
@@ -138,9 +134,9 @@ export function StableSubmit({
       <p className="mt-2 text-xs text-bone-ghost">{blocked}</p>
     </div>;
   }
-  if (!open || !tx) {
+  if (!open || !tx || !account) {
     return <div className={gap}>
-      <button type="button" className={tone === "plain" ? "press" : "press press-filled"} onClick={connect}>{label}</button>
+      <button type="button" className={tone === "plain" ? "press" : "press press-filled"} onClick={showSubmit}>{label}</button>
       {trouble && <p className="mt-2 text-xs text-refused">{trouble}</p>}
     </div>;
   }

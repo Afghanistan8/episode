@@ -1,19 +1,18 @@
 "use client";
 
-// Every write goes through here, and through the GenLayer transaction kit.
+// Every write goes through here.
 //
-// The kit quotes the fee, shows what is being signed, takes the approval and
-// tracks the round to a decision. The app does not sign, does not guess at a
-// fee, and does not tell anyone a transaction succeeded before the kit says
-// a round decided.
+// Stable Studionet uses its matching SDK. Preview chains use the transaction
+// kit. Both use the wallet selected in the site header.
 
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { SubmitInput, TrackedStatus } from "@genlayer/transaction-kit";
 import { GenLayerTransactionPanel } from "@genlayer/transaction-kit-react";
 import "@genlayer/transaction-kit-react/styles.css";
 
 import { CHAIN_ID, CONTRACT_SET, NETWORK_NAME, USING_FIXTURES } from "@/lib/chain";
-import { browserProvider, transactionKit } from "@/lib/episode";
+import { transactionKit } from "@/lib/episode";
+import { useWallet } from "@/lib/wallet";
 import { StableSubmit } from "./StableSubmit";
 
 export type SubmitProps = {
@@ -49,40 +48,30 @@ function PreviewSubmit({
   inline = false,
 }: SubmitProps) {
   const [open, setOpen] = useState(false);
-  const [account, setAccount] = useState<`0x${string}` | null>(null);
-  const [trouble, setTrouble] = useState("");
+  const [waitingForWallet, setWaitingForWallet] = useState(false);
+  const { address, provider, openPicker } = useWallet();
 
-  const kit = useMemo(() => transactionKit(account ?? undefined), [account]);
+  const kit = useMemo(() => transactionKit(address ?? undefined, provider), [address, provider]);
 
-  const connect = useCallback(async () => {
-    setTrouble("");
+  useEffect(() => {
+    if (waitingForWallet && address) {
+      setOpen(true);
+      setWaitingForWallet(false);
+    }
+  }, [waitingForWallet, address]);
+
+  function showSubmit() {
     if (USING_FIXTURES) {
       setOpen(true);
       return;
     }
-    const provider = browserProvider();
-    if (!provider) {
-      setTrouble(
-        "No wallet is injected in this browser. Install a GenLayer-capable " +
-          "wallet, or set NEXT_PUBLIC_EPISODE_FIXTURES=1 to work on the pages.",
-      );
-      return;
-    }
-    try {
-      const accounts = (await provider.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      const first = accounts[0];
-      if (!first) {
-        setTrouble("The wallet returned no account.");
-        return;
-      }
-      setAccount(first as `0x${string}`);
+    if (address) {
       setOpen(true);
-    } catch (error) {
-      setTrouble(error instanceof Error ? error.message : "the wallet refused");
+    } else {
+      setWaitingForWallet(true);
+      openPicker();
     }
-  }, []);
+  }
 
   const gap = inline ? "" : "mt-4";
 
@@ -115,11 +104,10 @@ function PreviewSubmit({
         <button
           type="button"
           className={tone === "plain" ? "press" : "press press-filled"}
-          onClick={connect}
+          onClick={showSubmit}
         >
           {label}
         </button>
-        {trouble && <p className="mt-2 text-xs text-refused">{trouble}</p>}
       </div>
     );
   }

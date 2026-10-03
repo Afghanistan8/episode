@@ -5,6 +5,7 @@ import { shortAddress } from "@/lib/format";
 
 import { Mark } from "./Mark";
 import { NavLinks } from "./NavLinks";
+import { WalletConnect } from "./WalletConnect";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -37,6 +38,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 {CONTRACT_SET ? shortAddress(CONTRACT_ADDRESS) : "Contract pending"}
               </span>
             </div>
+            <WalletConnect />
           </div>
         </div>
       </header>
