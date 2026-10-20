@@ -67,6 +67,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="site-footer-links">
             <Link href="/programmes">Programmes</Link>
             <Link href="/filing">Filings</Link>
+            <Link href="/assurance">Assurance</Link>
             <span>{NETWORK_NAME}</span>
           </div>
         </div>

@@ -7,6 +7,7 @@ const NAV = [
   { href: "/", label: "Overview" },
   { href: "/programmes", label: "Programmes" },
   { href: "/filing", label: "Filings" },
+  { href: "/assurance", label: "Assurance" },
 ];
 
 export function NavLinks() {

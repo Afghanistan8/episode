@@ -57,3 +57,16 @@ npm run dev
 Deployment and seed scripts accept a funded signing key only through the
 `EPISODE_PRIVATE_KEY` process environment variable. The browser app never needs
 that key, and it must not be stored in a file.
+
+## Milestone: Assurance Layer
+
+The assurance layer is four new, separately deployed Intelligent Contracts:
+source corroboration, consensus policy review, cross-filing integrity signals,
+and a separately funded supplemental capital pool. It does not replace or edit
+the live Episode market. Its contracts read only Episode's public views, and
+the capital pool cannot touch Episode's reserve or payouts.
+
+See [`docs/milestone-assurance.md`](docs/milestone-assurance.md) for the
+architecture, explicit settlement gates, deployment procedure, and Vercel
+environment variables. The web surface is available at `/assurance` after the
+four companion addresses are configured.

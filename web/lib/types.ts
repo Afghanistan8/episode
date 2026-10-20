@@ -153,3 +153,39 @@ export type Observation = {
   text: string;
   filed_at: string;
 };
+
+export type TruthFinding = {
+  status: "NONE" | "CORROBORATED" | "CONTRADICTED" | "INCONCLUSIVE";
+  matches: string;
+  checked: string;
+  source_digest: string;
+  receipt_digest: string;
+  resolved_at: string;
+};
+
+export type IntegritySignal = {
+  status: "NONE" | "CLEAR" | "REVIEW_REQUIRED";
+  reason: "" | "EXACT_EVIDENCE_REUSE" | "SIMILAR_EVENT";
+  related_filing: string;
+  similarity_bps: string;
+  receipt_digest: string;
+  indexed_at: string;
+};
+
+export type PolicyReview = {
+  status: "NONE" | "PASS" | "REVIEW";
+  flags: string[];
+  programme_digest: string;
+  version: string;
+  reviewed_at: string;
+};
+
+export type SupplementalPool = {
+  active: boolean;
+  sponsor: string;
+  benefit: string;
+  balance: string;
+  committed: string;
+  idle: string;
+  paid: string;
+};

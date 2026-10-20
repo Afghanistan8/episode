@@ -19,7 +19,7 @@ import {
 } from "@genlayer/transaction-kit";
 import { createMockKit } from "@genlayer/transaction-kit-react";
 
-import { CHAIN_ID, CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, chain } from "./chain";
+import { CHAIN_ID, CONTRACT_ADDRESS, CONTRACT_SET, RPC_URL, USING_FIXTURES, ZERO_ADDRESS, chain } from "./chain";
 import { fixtureRead } from "./fixtures";
 import { withReadDeadline } from "./read-deadline";
 import type { InjectedProvider } from "./wallet";
@@ -65,21 +65,25 @@ export class NotDeployed extends Error {
 }
 
 /** One view call. Throws with the contract's own refusal text when it refuses. */
-async function readOnce<T>(functionName: string, args: CalldataEncodable[]): Promise<T> {
+async function readOnce<T>(
+  address: `0x${string}`,
+  functionName: string,
+  args: CalldataEncodable[],
+): Promise<T> {
   if (CHAIN_ID === stableStudionet.id) {
     stableReader ??= createStableClient({
       chain: stableStudionet,
       endpoint: RPC_URL,
     });
     const answer = await stableReader.readContract({
-      address: CONTRACT_ADDRESS,
+      address,
       functionName,
       args,
     });
     return plain(answer) as T;
   }
   const answer = await client().readContract({
-    address: CONTRACT_ADDRESS,
+    address,
     functionName,
     args,
     jsonSafeReturn: true,
@@ -102,14 +106,24 @@ export async function read<T>(
       if (!Number.isSafeInteger(id) || id < 0) {
         throw new Error(`episode/filing-unknown: no filing ${String(args[0])}`);
       }
-      const count = Number(await readOnce<number | string>("filing_count", []));
+      const count = Number(await readOnce<number | string>(CONTRACT_ADDRESS, "filing_count", []));
       if (!Number.isSafeInteger(count) || count < 0) {
         throw new Error("filing_count returned an invalid count.");
       }
       if (id >= count) throw new Error(`episode/filing-unknown: no filing ${id}`);
     }
-    return readOnce<T>(functionName, args);
+    return readOnce<T>(CONTRACT_ADDRESS, functionName, args);
   }, functionName);
+}
+
+/** Read a public view on an additive Episode companion contract. */
+export async function readAt<T>(
+  address: `0x${string}`,
+  functionName: string,
+  args: CalldataEncodable[] = [],
+): Promise<T> {
+  if (address === ZERO_ADDRESS) throw new NotDeployed();
+  return withReadDeadline(() => readOnce<T>(address, functionName, args), functionName);
 }
 
 /** A view that is allowed to refuse: an unknown id is a 404, not a crash. */
@@ -148,6 +162,15 @@ export function refusalCode(error: unknown): string {
 /** A write, described for the transaction kit. */
 export function call(method: string, args: CalldataEncodable[]): SubmitInput {
   return { kind: "write", address: CONTRACT_ADDRESS, method, args };
+}
+
+/** A write directed at a separately deployed Episode companion contract. */
+export function callAt(
+  address: `0x${string}`,
+  method: string,
+  args: CalldataEncodable[],
+): SubmitInput {
+  return { kind: "write", address, method, args };
 }
 
 /** The kit the submit panel drives. In fixture mode, the kit's own mock. */

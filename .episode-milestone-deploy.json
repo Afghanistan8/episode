@@ -1,0 +1,13 @@
+{
+  "episode": "0x9e6985b530A0c422E876C773b2d8b4e58E20b4f5",
+  "truth": "0x368aE1C2bdf06437a07267fA96Beb6AB7bb0ceFc",
+  "guard": "0xCf46d892aF120D693a0811180DDBd25E9485c196",
+  "integrity": "0x7F994caBEbd62474bc424460604d0bD2C4bc0102",
+  "pool": "0xd5590963EB1608fd465866A54EB850B3459cfCdc",
+  "integrityThresholdBps": 8800,
+  "chainId": 61999,
+  "network": "studionet",
+  "rpc": "https://studio.genlayer.com/api",
+  "deployer": "0x4184bc5E5444F250767E8D33A49817A9B4FB0df3",
+  "deployedAt": "2026-10-20T15:04:35.811Z"
+}

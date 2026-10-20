@@ -42,6 +42,24 @@ export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_EPISODE_CONTRACT ||
 
 export const CONTRACT_SET = CONTRACT_ADDRESS !== ZERO_ADDRESS;
 
+/** Optional v2 companion contracts. They are intentionally independent from
+ * the original Episode deployment, which remains the source of truth for its
+ * programmes, filings and reserve. */
+export const TRUTH_CONTRACT = (process.env.NEXT_PUBLIC_EPISODE_TRUTH_CONTRACT ||
+  ZERO_ADDRESS) as `0x${string}`;
+export const INTEGRITY_CONTRACT = (process.env.NEXT_PUBLIC_EPISODE_INTEGRITY_CONTRACT ||
+  ZERO_ADDRESS) as `0x${string}`;
+export const POLICY_GUARD_CONTRACT = (process.env.NEXT_PUBLIC_EPISODE_POLICY_GUARD_CONTRACT ||
+  ZERO_ADDRESS) as `0x${string}`;
+export const CAPITAL_POOL_CONTRACT = (process.env.NEXT_PUBLIC_EPISODE_CAPITAL_POOL_CONTRACT ||
+  ZERO_ADDRESS) as `0x${string}`;
+export const MILESTONE_SET = [
+  TRUTH_CONTRACT,
+  INTEGRITY_CONTRACT,
+  POLICY_GUARD_CONTRACT,
+  CAPITAL_POOL_CONTRACT,
+].every((address) => address !== ZERO_ADDRESS);
+
 export const USING_FIXTURES = process.env.NEXT_PUBLIC_EPISODE_FIXTURES === "1";
 
 export const EXPLORER_URL =

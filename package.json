@@ -6,8 +6,10 @@
   "description": "Deploy, schema read-back and demo seeding for the Episode intelligent contract.",
   "scripts": {
     "deploy": "node scripts/deploy.mjs",
+    "deploy:milestone": "node scripts/deploy-milestone.mjs",
     "schema": "node scripts/schema.mjs",
     "seed": "node scripts/seed.mjs",
+    "test:milestone": "node --test tests/milestone-source.test.mjs",
     "test": "pytest"
   },
   "dependencies": {
